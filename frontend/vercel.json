@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/loja/:slug", "destination": "/wireframe.html" },
+    { "source": "/admin",      "destination": "/admin.html"     }
+  ]
+}

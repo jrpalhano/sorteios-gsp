@@ -1,0 +1,309 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #CCC8BF;
+  min-height: 100vh;
+}
+
+/* ── Layout base ── */
+.page {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 48px;
+}
+
+.hero-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 780px;
+  background: url('/fundo.png') center top / cover no-repeat;
+  z-index: 0;
+}
+
+.hero-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, #CCC8BF);
+}
+
+.logo-area, .card, .footer {
+  position: relative;
+  z-index: 1;
+}
+
+.logo-area {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.logo-area img {
+  width: 100%;
+  max-width: 480px;
+  object-fit: contain;
+}
+
+/* ── Card ── */
+.card {
+  width: 100%;
+  max-width: 480px;
+  background: #003D90;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+  padding: 36px 32px 40px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #FAC21E;
+  text-align: center;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+/* ── Formulário ── */
+.field { margin-bottom: 20px; }
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 6px;
+}
+
+.field label .obrigatorio { color: #FAC21E; margin-left: 2px; }
+
+.field input[type="text"],
+.field input[type="tel"],
+.field input[type="date"],
+.field input[type="password"] {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  font-size: 15px;
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+  transition: border-color 0.2s, background 0.2s;
+  outline: none;
+}
+
+.field input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.5);
+}
+
+.field input:focus {
+  border-color: #FAC21E;
+  background: rgba(255,255,255,0.15);
+}
+
+.field input::placeholder { color: rgba(255,255,255,0.35); }
+
+.field input.invalido {
+  border-color: rgba(255,100,100,0.8) !important;
+  background: rgba(220,53,69,0.1) !important;
+}
+
+.erro-campo {
+  font-size: 11px;
+  color: #ff8080;
+  margin-top: 5px;
+  display: none;
+}
+
+.hint {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  margin-top: 4px;
+}
+
+/* ── Radio ── */
+.radio-group {
+  display: flex;
+  gap: 12px;
+}
+
+.radio-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.radio-option input[type="radio"] {
+  accent-color: #FAC21E;
+  width: 16px;
+  height: 16px;
+}
+
+.radio-option:has(input:checked) {
+  border-color: #FAC21E;
+  background: rgba(250,194,30,0.15);
+  color: #FAC21E;
+  font-weight: 700;
+}
+
+.radio-group.invalido .radio-option {
+  border-color: rgba(255,100,100,0.7);
+}
+
+/* ── LGPD ── */
+.field-lgpd { margin-bottom: 20px; }
+
+.lgpd-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: normal;
+  color: rgba(255,255,255,0.65);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.lgpd-label input[type="checkbox"] {
+  accent-color: #FAC21E;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.lgpd-label strong { color: rgba(255,255,255,0.85); }
+
+.lgpd-invalida .lgpd-label,
+.lgpd-invalida .lgpd-label strong { color: #ff8080; }
+
+/* ── Divisor ── */
+.divisor {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin: 24px 0;
+}
+
+/* ── Botões ── */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: #FAC21E;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover  { background: #e6ad0a; }
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-primary:disabled {
+  background: rgba(250,194,30,0.35);
+  color: rgba(255,255,255,0.4);
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: transparent;
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.btn-ghost:hover { border-color: #FAC21E; color: #FAC21E; }
+
+/* ── Erro geral ── */
+.msg-erro {
+  background: rgba(220,53,69,0.15);
+  border: 1px solid rgba(220,53,69,0.4);
+  color: #ff8080;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+/* ── reCAPTCHA note ── */
+.recaptcha-note {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 14px;
+}
+
+/* ── Rodapé ── */
+.footer {
+  margin-top: 32px;
+  text-align: center;
+  color: #003D90;
+  font-size: 12px;
+  line-height: 1.8;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Loja badge ── */
+.loja-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  color: #FAC21E;
+  border: 1px solid rgba(250,194,30,0.4);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+  letter-spacing: 1px;
+}
+
+.badge-wrap { text-align: center; }
+
+/* ── Campo influencer condicional ── */
+.field-influencer { display: none; margin-bottom: 20px; }
+.field-influencer.visivel { display: block; }
+
+@media (max-width: 520px) {
+  .card { padding: 28px 20px 32px; }
+}

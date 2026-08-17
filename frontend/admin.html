@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Sorteio Kit Verão</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+    }
+
+    /* ── Login ── */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #003D90;
+      padding: 24px;
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    }
+
+    .login-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #003D90;
+      margin-bottom: 4px;
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: #90a4ae;
+      margin-bottom: 28px;
+    }
+
+    .login-field { margin-bottom: 16px; }
+
+    .login-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #546e7a;
+      margin-bottom: 6px;
+    }
+
+    .login-field input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #cfd8dc;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .login-field input:focus { border-color: #003D90; }
+
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: #FAC21E;
+      color: #003D90;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-login:hover { background: #e6ad0a; }
+
+    .login-erro {
+      background: #ffebee;
+      color: #c62828;
+      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-top: 14px;
+      display: none;
+    }
+
+    /* ── Painel ── */
+    .painel { display: none; }
+
+    /* Topbar */
+    .topbar {
+      background: #003D90;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .topbar-titulo {
+      color: #FAC21E;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .topbar-usuario {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar-usuario span {
+      color: rgba(255,255,255,0.65);
+      font-size: 13px;
+    }
+
+    .btn-logout {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-logout:hover { background: rgba(255,255,255,0.2); }
+
+    /* Conteúdo */
+    .conteudo {
+      padding: 28px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Cards de stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      border-left: 4px solid #003D90;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #90a4ae;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-valor {
+      font-size: 32px;
+      font-weight: 800;
+      color: #003D90;
+      line-height: 1;
+    }
+
+    .stat-loja {
+      font-size: 13px;
+      color: #546e7a;
+      margin-top: 4px;
+    }
+
+    /* Filtros */
+    .filtros {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .filtro-grupo {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .filtro-grupo label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #90a4ae;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .filtro-grupo input,
+    .filtro-grupo select {
+      padding: 8px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .filtro-grupo input:focus,
+    .filtro-grupo select:focus { border-color: #003D90; }
+
+    .btn-filtrar {
+      padding: 8px 20px;
+      background: #003D90;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      align-self: flex-end;
+    }
+
+    .btn-filtrar:hover { background: #002a6e; }
+
+    .btn-exportar {
+      padding: 8px 20px;
+      background: #FAC21E;
+      color: #003D90;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      align-self: flex-end;
+      text-decoration: none;
+    }
+
+    .btn-exportar:hover { background: #e6ad0a; }
+
+    /* Tabela */
+    .tabela-wrap {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      overflow: auto;
+    }
+
+    .tabela-info {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: #90a4ae;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      color: #90a4ae;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      background: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #37474f;
+      border-bottom: 1px solid #f5f5f5;
+      white-space: nowrap;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f9fbff; }
+
+    .badge-loja {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1565c0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .badge-sim {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #90a4ae;
+      font-size: 14px;
+    }
+
+    /* Paginação */
+    .paginacao {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .btn-pag {
+      padding: 6px 14px;
+      border: 1.5px solid #e0e0e0;
+      background: #fff;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-pag:hover:not(:disabled) { border-color: #003D90; color: #003D90; }
+    .btn-pag:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .pag-info { font-size: 13px; color: #90a4ae; }
+  </style>
+  <script src="/js/config.js"></script>
+</head>
+<body>
+
+  <!-- ── Tela de Login ── -->
+  <div class="login-wrap" id="telaLogin">
+    <div class="login-card">
+      <div class="login-title">Painel Administrativo</div>
+      <div class="login-sub">Sorteio Kit Verão — Supermercados Popular</div>
+
+      <form id="formLogin">
+        <div class="login-field">
+          <label>Usuário</label>
+          <input type="text" id="loginUsuario" autocomplete="username" required>
+        </div>
+        <div class="login-field">
+          <label>Senha</label>
+          <input type="password" id="loginSenha" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn-login" id="btnLogin">Entrar</button>
+        <div class="login-erro" id="loginErro"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Painel ── -->
+  <div class="painel" id="painel">
+
+    <div class="topbar">
+      <div class="topbar-titulo">Sorteio Kit Verão</div>
+      <div class="topbar-usuario">
+        <span id="topbarUsuario"></span>
+        <button class="btn-logout" onclick="logout()">Sair</button>
+      </div>
+    </div>
+
+    <div class="conteudo">
+
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="loading">Carregando...</div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filtros">
+        <div class="filtro-grupo">
+          <label>Buscar</label>
+          <input type="text" id="filtroBusca" placeholder="Nome, telefone ou cupom...">
+        </div>
+        <div class="filtro-grupo">
+          <label>Loja</label>
+          <select id="filtroLoja">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <button class="btn-filtrar" onclick="buscar(1)">Filtrar</button>
+        <a class="btn-exportar" id="btnExportar" href="/api/admin/export" target="_blank">Exportar Excel</a>
+      </div>
+
+      <!-- Tabela -->
+      <div class="tabela-wrap">
+        <div class="tabela-info" id="tabelaInfo">—</div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Loja</th>
+              <th>Nome</th>
+              <th>Telefone</th>
+              <th>CPF</th>
+              <th>Cupom</th>
+              <th>Data Cupom</th>
+              <th>Influencer</th>
+              <th>Cadastrado em</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaBody">
+            <tr><td colspan="9" class="loading">Carregando...</td></tr>
+          </tbody>
+        </table>
+        <div class="paginacao">
+          <span class="pag-info" id="pagInfo"></span>
+          <button class="btn-pag" id="btnAnterior" onclick="mudarPagina(-1)" disabled>← Anterior</button>
+          <button class="btn-pag" id="btnProximo"  onclick="mudarPagina(1)">Próximo →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const POR_PAGINA = 50;
+    let paginaAtual = 1;
+    let totalRegistros = 0;
+    let lojas = [];
+
+    // ── Verificar sessão ao carregar ──────────────────────────────────────────
+    async function verificarSessao() {
+      try {
+        const r = await fetch(`${window.API_URL}/api/admin/me`, { credentials: 'include' });
+        if (r.ok) {
+          const d = await r.json();
+          mostrarPainel(d.usuario);
+        }
+      } catch { /* não autenticado, exibe login */ }
+    }
+    verificarSessao();
+
+    // ── Login ─────────────────────────────────────────────────────────────────
+    document.getElementById('formLogin').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn  = document.getElementById('btnLogin');
+      const erro = document.getElementById('loginErro');
+      erro.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      try {
+        const r = await fetch(`${window.API_URL}/api/admin/login`, {
+          method:      'POST',
+          credentials: 'include',
+          headers:     { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usuario: document.getElementById('loginUsuario').value,
+            senha:   document.getElementById('loginSenha').value,
+          }),
+        });
+        const d = await r.json();
+        if (r.ok) {
+          mostrarPainel(document.getElementById('loginUsuario').value);
+        } else {
+          erro.textContent   = d.erro || 'Erro ao fazer login';
+          erro.style.display = 'block';
+        }
+      } catch {
+        erro.textContent   = 'Erro de conexão';
+        erro.style.display = 'block';
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Entrar';
+      }
+    });
+
+    // ── Logout ────────────────────────────────────────────────────────────────
+    async function logout() {
+      await fetch(`${window.API_URL}/api/admin/logout`, { method: 'POST', credentials: 'include' });
+      document.getElementById('telaLogin').style.display = 'flex';
+      document.getElementById('painel').style.display    = 'none';
+    }
+
+    // ── Mostrar painel ────────────────────────────────────────────────────────
+    async function mostrarPainel(usuario) {
+      document.getElementById('telaLogin').style.display = 'none';
+      document.getElementById('painel').style.display    = 'block';
+      document.getElementById('topbarUsuario').textContent = usuario;
+      await Promise.all([carregarStats(), carregarLojas()]);
+      buscar(1);
+    }
+
+    // ── Stats ─────────────────────────────────────────────────────────────────
+    async function carregarStats() {
+      const r = await fetch(`${window.API_URL}/api/admin/stats`, { credentials: 'include' });
+      const dados = await r.json();
+      const total = dados.reduce((s, l) => s + l.total, 0);
+
+      const grid = document.getElementById('statsGrid');
+      grid.innerHTML = `
+        <div class="stat-card" style="border-left-color:#FAC21E">
+          <div class="stat-label">Total Geral</div>
+          <div class="stat-valor">${total}</div>
+          <div class="stat-loja">todas as lojas</div>
+        </div>
+        ${dados.map(l => `
+          <div class="stat-card">
+            <div class="stat-label">${l.nome}</div>
+            <div class="stat-valor">${l.total}</div>
+            <div class="stat-loja">inscrições</div>
+          </div>
+        `).join('')}
+      `;
+    }
+
+    // ── Lojas para o select ───────────────────────────────────────────────────
+    async function carregarLojas() {
+      const r = await fetch(`${window.API_URL}/api/admin/stats`, { credentials: 'include' });
+      lojas = await r.json();
+      const sel = document.getElementById('filtroLoja');
+      lojas.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.slug;
+        opt.textContent = l.nome;
+        sel.appendChild(opt);
+      });
+    }
+
+    // ── Buscar inscrições ─────────────────────────────────────────────────────
+    async function buscar(pagina) {
+      paginaAtual = pagina;
+      const busca   = document.getElementById('filtroBusca').value.trim();
+      const lojaSlg = document.getElementById('filtroLoja').value;
+
+      // Atualizar link de exportação
+      const exportParams = new URLSearchParams();
+      const lojaObj = lojas.find(l => l.slug === lojaSlg);
+      if (lojaObj) exportParams.set('loja_id', lojaObj.id || '');
+      document.getElementById('btnExportar').href =
+        `${window.API_URL}/api/admin/export${exportParams.toString() ? '?' + exportParams : ''}`;
+
+      const params = new URLSearchParams({ page: pagina, limit: POR_PAGINA });
+      if (busca)    params.set('busca', busca);
+      if (lojaObj)  params.set('loja_id', lojaObj.id);
+
+      document.getElementById('tabelaBody').innerHTML =
+        '<tr><td colspan="9" class="loading">Carregando...</td></tr>';
+
+      try {
+        const r = await fetch(`${window.API_URL}/api/admin/inscricoes?${params}`, { credentials: 'include' });
+        const d = await r.json();
+        totalRegistros = d.total;
+        renderTabela(d.data);
+        atualizarPaginacao();
+        document.getElementById('tabelaInfo').textContent =
+          `${d.total} inscrição${d.total !== 1 ? 'ões' : ''} encontrada${d.total !== 1 ? 's' : ''}`;
+      } catch {
+        document.getElementById('tabelaBody').innerHTML =
+          '<tr><td colspan="9" class="loading">Erro ao carregar dados.</td></tr>';
+      }
+    }
+
+    function formatarData(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleDateString('pt-BR');
+    }
+
+    function formatarDataHora(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleString('pt-BR');
+    }
+
+    function renderTabela(rows) {
+      const tbody = document.getElementById('tabelaBody');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="loading">Nenhum resultado encontrado.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.id}</td>
+          <td><span class="badge-loja">${r.loja}</span></td>
+          <td>${r.nome}</td>
+          <td>${r.telefone}</td>
+          <td style="font-family:monospace">${r.cpf}</td>
+          <td>${r.numero_cupom}</td>
+          <td>${formatarData(r.data_cupom)}</td>
+          <td>${r.comprou_influencer
+            ? `<span class="badge-sim">Sim</span> ${r.influencer_nome ? '· ' + r.influencer_nome : ''}`
+            : '—'}</td>
+          <td>${formatarDataHora(r.criado_em)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function atualizarPaginacao() {
+      const totalPags = Math.ceil(totalRegistros / POR_PAGINA);
+      document.getElementById('pagInfo').textContent =
+        `Página ${paginaAtual} de ${totalPags || 1}`;
+      document.getElementById('btnAnterior').disabled = paginaAtual <= 1;
+      document.getElementById('btnProximo').disabled  = paginaAtual >= totalPags;
+    }
+
+    function mudarPagina(delta) {
+      buscar(paginaAtual + delta);
+    }
+
+    // Busca ao pressionar Enter
+    document.getElementById('filtroBusca').addEventListener('keydown', e => {
+      if (e.key === 'Enter') buscar(1);
+    });
+  </script>
+
+</body>
+</html>
