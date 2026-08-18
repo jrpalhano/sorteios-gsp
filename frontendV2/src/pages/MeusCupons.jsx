@@ -1,11 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import FormField from '../components/FormField'
 
-const API_URL = import.meta.env.VITE_API_URL
+const API_URL  = import.meta.env.VITE_API_URL
+const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+
+function loadRecaptcha() {
+  if (!SITE_KEY || document.querySelector('script[data-recaptcha]')) return
+  const s = document.createElement('script')
+  s.src = `https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`
+  s.dataset.recaptcha = '1'
+  document.head.appendChild(s)
+}
+
+async function getRecaptchaToken() {
+  if (!SITE_KEY || !window.grecaptcha) return ''
+  return new Promise((resolve) => {
+    window.grecaptcha.ready(async () => {
+      try { resolve(await window.grecaptcha.execute(SITE_KEY, { action: 'consulta' })) }
+      catch { resolve('') }
+    })
+  })
+}
 
 const schema = yup.object({
   telefone: yup
@@ -43,6 +62,8 @@ export default function MeusCupons() {
   const [cupons, setCupons] = useState(null)
   const [erroGeral, setErroGeral] = useState('')
 
+  useEffect(() => { loadRecaptcha() }, [])
+
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: yupResolver(schema),
     mode: 'onBlur',
@@ -52,7 +73,8 @@ export default function MeusCupons() {
     setErroGeral('')
     setCupons(null)
     try {
-      const params = new URLSearchParams({ telefone: values.telefone, cpf: values.cpf })
+      const recaptcha_token = await getRecaptchaToken()
+      const params = new URLSearchParams({ telefone: values.telefone, cpf: values.cpf, recaptcha_token })
       const resp = await fetch(`${API_URL}/api/consulta?${params}`)
       const data = await resp.json()
       if (!resp.ok) {
