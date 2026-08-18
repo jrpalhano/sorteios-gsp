@@ -63,13 +63,7 @@ export default function Index() {
           Escolha sua loja para participar
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <Link to="/loja/piquia" className="btn-primary" style={{ lineHeight: 1.3 }}>
-            PIQUIA
-            <span style={{ display: 'block', fontSize: 11, fontWeight: 600, opacity: 0.8, marginTop: 3 }}>
-              Participar Agora
-            </span>
-          </Link>
+        <div>
           <Link to="/loja/centro" className="btn-primary" style={{ lineHeight: 1.3 }}>
             CENTRO
             <span style={{ display: 'block', fontSize: 11, fontWeight: 600, opacity: 0.8, marginTop: 3 }}>
