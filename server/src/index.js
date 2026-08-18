@@ -30,6 +30,8 @@ app.use(helmet({
 // ── CORS ──────────────────────────────────────────────────────────────────────
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  'https://sorteios.gruposuperpopular.com.br',
+  'https://sorteios-gsp.vercel.app',
   'http://localhost:3001',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
