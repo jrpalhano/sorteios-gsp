@@ -1,13 +1,17 @@
-const express  = require('express');
-const router   = express.Router();
-const db       = require('../db/connection');
-const cpfUtil  = require('../utils/cpf');
+const express   = require('express');
+const router    = express.Router();
+const db        = require('../db/connection');
+const cpfUtil   = require('../utils/cpf');
+const recaptcha = require('../utils/recaptcha');
 const { consultaLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', consultaLimiter, async (req, res) => {
-  const { telefone, cpf } = req.query;
+  const { telefone, cpf, recaptcha_token } = req.query;
 
   if (!telefone || !cpf) return res.status(400).json({ erro: 'Informe telefone e CPF' });
+
+  const { valido } = await recaptcha.validate(recaptcha_token || '');
+  if (!valido) return res.status(400).json({ erro: 'Verificação de segurança falhou. Tente novamente.' });
   if (!/^\(\d{2}\) \d{4,5}-\d{4}$/.test(telefone)) return res.status(400).json({ erro: 'Telefone inválido' });
   if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf))    return res.status(400).json({ erro: 'CPF inválido' });
 

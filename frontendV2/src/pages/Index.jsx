@@ -23,8 +23,8 @@ export default function Index() {
         <h1 className="card-title">O QUE VOCÊ PODE GANHAR</h1>
         <p className="card-subtitle">Kit completo para curtir o verão!</p>
 
-        <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 28 }}>
-          <div style={{ flex: '0 0 200px' }}>
+        <div className="kit-layout">
+          <div className="kit-foto">
             <img src="/kit-verao.png" alt="Kit Verão" style={{ width: '100%', borderRadius: 10 }} />
           </div>
           <ul style={{ listStyle: 'none', flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -43,7 +43,7 @@ export default function Index() {
         </p>
         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
           {[
-            'Válido para compras realizadas nas lojas participantes (PIQUIA e CENTRO).',
+            'Válido para compras realizadas na loja do Centro.',
             'Cada cupom fiscal gera uma inscrição única no sorteio.',
             'O mesmo cupom não pode ser cadastrado mais de uma vez.',
             'O sorteio será realizado ao vivo nas redes sociais do Supermercados Popular.',
@@ -59,16 +59,9 @@ export default function Index() {
 
         <hr className="divisor" />
 
-        <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', textAlign: 'center', marginBottom: 12, letterSpacing: '0.5px' }}>
-          Escolha sua loja para participar
-        </p>
-
         <div>
-          <Link to="/loja/centro" className="btn-primary" style={{ lineHeight: 1.3 }}>
-            CENTRO
-            <span style={{ display: 'block', fontSize: 11, fontWeight: 600, opacity: 0.8, marginTop: 3 }}>
-              Participar Agora
-            </span>
+          <Link to="/loja/centro" className="btn-primary">
+            Participar Agora
           </Link>
         </div>
 

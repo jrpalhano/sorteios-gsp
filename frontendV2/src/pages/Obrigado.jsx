@@ -36,11 +36,14 @@ export default function Obrigado() {
           Caso seja o ganhador, entraremos em contato pelo{' '}
           <strong style={{ color: '#fff' }}>número de telefone</strong> informado.
         </p>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, marginBottom: 8 }}>
+          Seu cupom será validado em nossos servidores e você receberá uma mensagem de confirmação no número cadastrado.
+        </p>
 
         <hr className="divisor" style={{ width: '100%' }} />
 
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 28 }}>
-          Sorteio válido entre os dias{' '}
+          Sorteio válido para compras realizadas entre os dias{' '}
           <strong style={{ color: 'rgba(255,255,255,0.7)' }}>18 e 22 de agosto de 2026</strong>.
         </p>
 

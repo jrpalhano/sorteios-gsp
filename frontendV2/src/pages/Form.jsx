@@ -167,10 +167,6 @@ export default function Form() {
         <h1 className="card-title">Sorteio Kit Verão</h1>
         <p className="card-subtitle">Preencha os dados abaixo para participar</p>
 
-        <div className="badge-wrap">
-          <span className="loja-badge">Loja {lojaNome}</span>
-        </div>
-
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
 
           <FormField label="Nome completo" required error={errors.nome?.message}>
