@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import FormField from '../components/FormField'
 
 const API_URL  = import.meta.env.VITE_API_URL
@@ -48,6 +48,11 @@ const schema = yup.object({
   lgpd: yup
     .bool()
     .oneOf([true], 'Você precisa aceitar os termos da LGPD')
+    .required(),
+
+  regulamento: yup
+    .bool()
+    .oneOf([true], 'Você precisa confirmar que leu o regulamento')
     .required(),
 })
 
@@ -160,11 +165,11 @@ export default function Form() {
       <div className="hero-bg" />
 
       <div className="logo-area">
-        <img src="/selo-kit-ver1.png" alt="Selo Kit Verão" />
+        <img src="/selo-festival-premios.png" alt="Festival de Prêmios" />
       </div>
 
       <div className="card">
-        <h1 className="card-title">Sorteio Kit Verão</h1>
+        <h1 className="card-title">FESTIVAL DE PRÊMIOS</h1>
         <p className="card-subtitle">Preencha os dados abaixo para participar</p>
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -276,12 +281,29 @@ export default function Form() {
               <span>
                 Autorizo o Supermercados Popular a utilizar meus dados pessoais (nome, CPF e telefone)
                 exclusivamente para fins de participação neste sorteio, conforme a{' '}
-                <strong>Lei 13.709/2018 (LGPD)</strong>.
+                <strong>Lei 13.709/2018 (LGPD)</strong>. Consulte nossa{' '}
+                <Link to="/privacidade" target="_blank" style={{ color: '#FAC21E' }}>Política de Privacidade</Link>.
               </span>
             </label>
             {errors.lgpd && (
               <span className="erro-campo" style={{ display: 'block', marginTop: 8 }}>
                 {errors.lgpd.message}
+              </span>
+            )}
+          </div>
+
+          {/* Regulamento */}
+          <div className={`field-lgpd${errors.regulamento ? ' lgpd-invalida' : ''}`}>
+            <label className="lgpd-label">
+              <input type="checkbox" {...register('regulamento')} />
+              <span>
+                Declaro que li e concordo com o <strong>regulamento da promoção Festival de Prêmios</strong>{' '}
+                do Supermercados Popular.
+              </span>
+            </label>
+            {errors.regulamento && (
+              <span className="erro-campo" style={{ display: 'block', marginTop: 8 }}>
+                {errors.regulamento.message}
               </span>
             )}
           </div>
