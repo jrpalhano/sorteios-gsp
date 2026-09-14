@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom'
 
-const itens = [
-  'Caixa Térmica 32 lt - 1 unid',
-  'Gelo - 1 unid',
-  'Cerveja Skol - 1 cx',
-  'Costela Bovina - 3 kg',
-  'Whisky Cavalo Branco - 1 unid',
-  'Energético Baly 2 lt - 1 unid',
-  'Carvão - 1 unid',
+const premios = [
+  'Refrigerador 293 Litros',
+  'TV Smart',
+  'Air Fryer',
+  'Ventilador',
+  'Quadriciclo Infantil',
+  'Vários Prêmios Instantâneos',
 ]
 
 export default function Index() {
@@ -16,25 +15,34 @@ export default function Index() {
       <div className="hero-bg" />
 
       <div className="logo-area">
-        <img src="/selo-kit-ver1.png" alt="Selo Kit Verão Supermercados Popular" />
+        <img src="/selo-festival-premios.png" alt="Festival de Prêmios Supermercados Popular" />
       </div>
 
       <div className="card">
-        <h1 className="card-title">O QUE VOCÊ PODE GANHAR</h1>
-        <p className="card-subtitle">Kit completo para curtir o verão!</p>
+        <h1 className="card-title">FESTIVAL DE PRÊMIOS</h1>
+        <p className="card-subtitle">Loja Pequiá — Concorra a prêmios incríveis!</p>
 
-        <div className="kit-layout">
-          <div className="kit-foto">
-            <img src="/kit-verao.png" alt="Kit Verão" style={{ width: '100%', borderRadius: 10 }} />
-          </div>
-          <ul style={{ listStyle: 'none', flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {itens.map((item) => (
-              <li key={item} style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', padding: '1px 0', lineHeight: 1.4 }}>
-                {item}
-              </li>
-            ))}
-          </ul>
+        <img
+          src="/premios-festival-premios1.png"
+          alt="Prêmios do Festival"
+          className="premios-img"
+        />
+
+        <div className="badge-compra">
+          Compras a partir de <strong>R$ 49,00</strong> já garantem sua participação!
         </div>
+
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#FAC21E', letterSpacing: '0.5px', marginBottom: 12 }}>
+          PRÊMIOS
+        </p>
+        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+          {premios.map((nome) => (
+            <li key={nome} style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', paddingLeft: 16, position: 'relative', lineHeight: 1.5 }}>
+              <span style={{ position: 'absolute', left: 0, color: '#FAC21E' }}>•</span>
+              {nome}
+            </li>
+          ))}
+        </ul>
 
         <hr className="divisor" />
 
@@ -43,12 +51,13 @@ export default function Index() {
         </p>
         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
           {[
-            'Válido para compras realizadas na loja do Centro.',
+            'Promoção exclusiva para a loja do Pequiá.',
+            'Válido para compras a partir de R$ 49,00.',
             'Cada cupom fiscal gera uma inscrição única no sorteio.',
             'O mesmo cupom não pode ser cadastrado mais de uma vez.',
-            'O sorteio será realizado ao vivo nas redes sociais do Supermercados Popular.',
+            'Promoção válida entre os dias 15/09 e 31/10.',
+            'O sorteio será realizado ao vivo no dia 31 de outubro.',
             'O ganhador será contactado pelo número de telefone cadastrado.',
-            'Promoção válida entre os dias 18 e 22 de agosto.',
           ].map((regra) => (
             <li key={regra} style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', paddingLeft: 16, position: 'relative', lineHeight: 1.5 }}>
               <span style={{ position: 'absolute', left: 0, color: '#FAC21E' }}>•</span>
@@ -59,8 +68,13 @@ export default function Index() {
 
         <hr className="divisor" />
 
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>SORTEIO EM</p>
+          <p style={{ fontSize: 22, fontWeight: 800, color: '#FAC21E', letterSpacing: 1 }}>31 DE OUTUBRO</p>
+        </div>
+
         <div>
-          <Link to="/loja/centro" className="btn-primary">
+          <Link to="/loja/piquia" className="btn-primary">
             Participar Agora
           </Link>
         </div>

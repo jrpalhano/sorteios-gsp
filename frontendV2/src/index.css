@@ -2,7 +2,8 @@
 
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
-  background: #CCC8BF;
+  background: linear-gradient(180deg, #000D26 0%, #001A4D 50%, #003D90 100%);
+  background-attachment: fixed;
   min-height: 100vh;
 }
 
@@ -17,19 +18,7 @@ body {
 }
 
 .hero-bg {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 780px;
-  background: url('/fundo.png') center top / cover no-repeat;
-  z-index: 0;
-}
-
-.hero-bg::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 80px;
-  background: linear-gradient(to bottom, transparent, #CCC8BF);
+  display: none;
 }
 
 .logo-area, .card, .footer {
@@ -277,7 +266,7 @@ body {
 .footer {
   margin-top: 32px;
   text-align: center;
-  color: #003D90;
+  color: rgba(255,255,255,0.35);
   font-size: 12px;
   line-height: 1.8;
   position: relative;
@@ -303,6 +292,62 @@ body {
 /* ── Campo influencer condicional ── */
 .field-influencer { display: none; margin-bottom: 20px; }
 .field-influencer.visivel { display: block; }
+
+.premios-img {
+  width: 100%;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.premios-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.premio-card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 12px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.premio-card .premio-icon { font-size: 28px; line-height: 1; }
+
+.premio-card .premio-nome {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.3;
+}
+
+.premio-destaque {
+  grid-column: 1 / -1;
+  background: rgba(250,194,30,0.12);
+  border-color: rgba(250,194,30,0.35);
+}
+
+.premio-destaque .premio-nome { color: #FAC21E; font-size: 13px; }
+
+.badge-compra {
+  background: rgba(250,194,30,0.15);
+  border: 1px solid rgba(250,194,30,0.4);
+  border-radius: 8px;
+  padding: 10px 16px;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+}
+
+.badge-compra strong { color: #FAC21E; font-size: 16px; }
 
 .kit-layout {
   display: flex;

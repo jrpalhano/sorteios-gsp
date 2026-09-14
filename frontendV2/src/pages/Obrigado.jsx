@@ -6,7 +6,7 @@ export default function Obrigado() {
       <div className="hero-bg" />
 
       <div className="logo-area">
-        <img src="/selo-kit-ver1.png" alt="Selo Kit Verão" />
+        <img src="/selo-festival-premios.png" alt="Festival de Prêmios" />
       </div>
 
       <div className="card" style={{ alignItems: 'center', textAlign: 'center' }}>
@@ -28,7 +28,7 @@ export default function Obrigado() {
         <h1 className="card-title">Inscrição Confirmada!</h1>
 
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, margin: '12px 0 8px' }}>
-          Obrigado por participar do <strong style={{ color: '#fff' }}>Sorteio Kit Verão</strong>{' '}
+          Obrigado por participar do <strong style={{ color: '#fff' }}>Festival de Prêmios</strong>{' '}
           do Supermercados Popular!
         </p>
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.8)', lineHeight: 1.7, marginBottom: 8 }}>
@@ -43,8 +43,10 @@ export default function Obrigado() {
         <hr className="divisor" style={{ width: '100%' }} />
 
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 28 }}>
-          Sorteio válido para compras realizadas entre os dias{' '}
-          <strong style={{ color: 'rgba(255,255,255,0.7)' }}>18 e 22 de agosto de 2026</strong>.
+          Sorteio válido para compras realizadas entre{' '}
+          <strong style={{ color: 'rgba(255,255,255,0.7)' }}>15/09 e 31/10</strong>.
+          O sorteio será realizado em{' '}
+          <strong style={{ color: '#FAC21E' }}>31 de outubro</strong>.
         </p>
 
         <Link to="/" className="btn-primary" style={{ display: 'inline-block', width: 'auto', padding: '13px 32px' }}>
