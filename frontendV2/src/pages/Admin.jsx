@@ -54,7 +54,7 @@ function LoginForm({ onLoggedIn }) {
     <div className="page">
       <div className="hero-bg" />
       <div className="logo-area">
-        <img src="/selo-kit-ver1.png" alt="Selo Kit Verão" />
+        <img src="/LOGO POPULAR - COM SOMBRA (3).png" alt="Supermercados Popular" />
       </div>
       <div className="card" style={{ maxWidth: 380 }}>
         <h1 className="card-title">Painel Admin</h1>
@@ -177,7 +177,7 @@ function Dashboard({ onLogout }) {
       {/* Header */}
       <div style={{ background: 'rgba(0,0,0,0.4)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="/selo-kit-ver1.png" alt="Logo" style={{ height: 36 }} />
+          <img src="/LOGO POPULAR - COM SOMBRA (3).png" alt="Supermercados Popular" style={{ height: 36 }} />
           <span style={{ fontSize: 16, fontWeight: 700, color: '#FAC21E' }}>Painel Admin</span>
         </div>
         <button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.7)', fontSize: 13, padding: '7px 16px', borderRadius: 8, cursor: 'pointer' }}>
