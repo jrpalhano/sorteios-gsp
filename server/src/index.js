@@ -25,6 +25,13 @@ app.use(helmet({
       styleSrc:   ["'self'", "'unsafe-inline'"],
     },
   },
+  hsts: {
+    maxAge:            60 * 60 * 24 * 365, // 1 ano
+    includeSubDomains: true,
+    preload:           true,
+  },
+  referrerPolicy: { policy: 'no-referrer' },
+  crossOriginResourcePolicy: { policy: 'same-origin' },
 }));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
