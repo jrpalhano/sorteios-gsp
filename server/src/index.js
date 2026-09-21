@@ -6,10 +6,12 @@ const cors         = require('cors');
 const cookieParser = require('cookie-parser');
 const path         = require('path');
 
-const inscricoesRouter = require('./routes/inscricoes');
-const adminRouter      = require('./routes/admin');
-const lojasRouter      = require('./routes/lojas');
-const consultaRouter   = require('./routes/consulta');
+const inscricoesRouter  = require('./routes/inscricoes');
+const adminRouter       = require('./routes/admin');
+const lojasRouter       = require('./routes/lojas');
+const consultaRouter    = require('./routes/consulta');
+const promocoesRouter   = require('./routes/promocoes');
+const inscricoesV2Router = require('./routes/inscricoesV2');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -59,8 +61,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// ── Arquivos estáticos (HTML, imagens) ───────────────────────────────────────
+// ── Arquivos estáticos (HTML, imagens, uploads) ───────────────────────────────
 app.use(express.static(path.join(__dirname, '../../frontend')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ── Config pública (chaves seguras para o frontend) ───────────────────────────
 app.get('/api/config', (req, res) => {
@@ -78,10 +81,15 @@ app.get('/admin', (req, res) => {
 });
 
 // ── Rotas da API ──────────────────────────────────────────────────────────────
+// ── v1 (fluxo Festival de Prêmios — intocado) ─────────────────────────────────
 app.use('/api/inscricoes', inscricoesRouter);
 app.use('/api/admin',      adminRouter);
 app.use('/api/lojas',      lojasRouter);
 app.use('/api/consulta',   consultaRouter);
+
+// ── v2 (promoções dinâmicas) ──────────────────────────────────────────────────
+app.use('/api/v2/promocoes',   promocoesRouter);
+app.use('/api/v2/inscricoes',  inscricoesV2Router);
 
 // ── 404 para rotas desconhecidas da API ───────────────────────────────────────
 app.use('/api', (req, res) => {
