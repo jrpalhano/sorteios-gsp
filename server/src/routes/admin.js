@@ -11,25 +11,46 @@ const { loginLimiter } = require('../middleware/rateLimiter');
 // ── Login ─────────────────────────────────────────────────────────────────────
 
 router.post('/login', loginLimiter, async (req, res) => {
-  const { usuario, senha } = req.body;
-  if (!usuario || !senha) return res.status(400).json({ erro: 'Preencha usuário e senha' });
-  if (usuario !== process.env.ADMIN_USER) return res.status(401).json({ erro: 'Credenciais inválidas' });
+  const { email, senha } = req.body;
+  if (!email || !senha) return res.status(400).json({ erro: 'Preencha e-mail e senha' });
 
-  const senhaValida = await bcrypt.compare(senha, process.env.ADMIN_PASS_HASH);
-  if (!senhaValida) return res.status(401).json({ erro: 'Credenciais inválidas' });
+  try {
+    const { rows } = await db.query(
+      'SELECT id, nome, nome_completo, email, senha_hash, ativo FROM administradores WHERE email = $1',
+      [email.toLowerCase().trim()]
+    );
 
-  const token = jwt.sign({ usuario }, process.env.JWT_SECRET, { expiresIn: '8h' });
+    // Mesma mensagem para email inexistente e senha errada — evita enumeração
+    const admin = rows[0];
+    const senhaValida = admin ? await bcrypt.compare(senha, admin.senha_hash) : false;
 
-  const prod = process.env.NODE_ENV === 'production';
-  res.cookie('admin_token', token, {
-    httpOnly: true,
-    secure:   prod,
-    sameSite: prod ? 'None' : 'Strict', // None obrigatório para cross-domain (Vercel → Railway)
-    maxAge:   8 * 60 * 60 * 1000,
-    path:     '/api/admin',
-  });
+    if (!admin || !senhaValida) {
+      return res.status(401).json({ erro: 'Credenciais inválidas' });
+    }
 
-  res.json({ mensagem: 'Login realizado com sucesso' });
+    if (!admin.ativo) {
+      return res.status(403).json({ erro: 'Conta desativada. Entre em contato com o responsável.' });
+    }
+
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email, nome: admin.nome },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
+    const prod = process.env.NODE_ENV === 'production';
+    res.cookie('admin_token', token, {
+      httpOnly: true,
+      secure:   prod,
+      sameSite: prod ? 'None' : 'Strict',
+      maxAge:   8 * 60 * 60 * 1000,
+      path:     '/api/admin',
+    });
+
+    res.json({ mensagem: 'Login realizado com sucesso', nome: admin.nome });
+  } catch {
+    res.status(500).json({ erro: 'Erro interno' });
+  }
 });
 
 // ── Logout ────────────────────────────────────────────────────────────────────
@@ -39,10 +60,81 @@ router.post('/logout', (req, res) => {
   res.json({ mensagem: 'Logout realizado' });
 });
 
-// ── Verificar sessão ──────────────────────────────────────────────────────────
+// ── Sessão atual ──────────────────────────────────────────────────────────────
 
 router.get('/me', auth, (req, res) => {
-  res.json({ usuario: req.admin.usuario });
+  const { id, nome, nome_completo, email } = req.admin;
+  res.json({ id, nome, nome_completo, email });
+});
+
+// ── Cadastro de novo admin (protegido) ────────────────────────────────────────
+
+router.post('/admins', auth, async (req, res) => {
+  const { nome, nome_completo, email, senha } = req.body;
+
+  if (!nome || !nome_completo || !email || !senha) {
+    return res.status(400).json({ erro: 'Todos os campos são obrigatórios' });
+  }
+  if (senha.length < 8) {
+    return res.status(400).json({ erro: 'A senha deve ter no mínimo 8 caracteres' });
+  }
+
+  try {
+    const emailNorm  = email.toLowerCase().trim();
+    const senha_hash = await bcrypt.hash(senha, 12);
+
+    await db.query(
+      `INSERT INTO administradores (nome, nome_completo, email, senha_hash)
+       VALUES ($1, $2, $3, $4)`,
+      [nome.trim(), nome_completo.trim(), emailNorm, senha_hash]
+    );
+
+    res.status(201).json({ mensagem: 'Administrador cadastrado com sucesso' });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ erro: 'Este e-mail já está cadastrado' });
+    }
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// ── Listar admins ─────────────────────────────────────────────────────────────
+
+router.get('/admins', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT id, nome, nome_completo, email, ativo, criado_em FROM administradores ORDER BY criado_em ASC'
+    );
+    res.json(rows);
+  } catch {
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
+// ── Ativar / desativar admin ──────────────────────────────────────────────────
+
+router.patch('/admins/:id/ativo', auth, async (req, res) => {
+  const alvoId = Number(req.params.id);
+
+  if (alvoId === req.admin.id) {
+    return res.status(400).json({ erro: 'Você não pode desativar sua própria conta' });
+  }
+
+  const { ativo } = req.body;
+  if (typeof ativo !== 'boolean') {
+    return res.status(400).json({ erro: 'Campo ativo deve ser true ou false' });
+  }
+
+  try {
+    const { rowCount } = await db.query(
+      'UPDATE administradores SET ativo = $1 WHERE id = $2',
+      [ativo, alvoId]
+    );
+    if (rowCount === 0) return res.status(404).json({ erro: 'Admin não encontrado' });
+    res.json({ mensagem: `Conta ${ativo ? 'ativada' : 'desativada'} com sucesso` });
+  } catch {
+    res.status(500).json({ erro: 'Erro interno' });
+  }
 });
 
 // ── Stats por loja ────────────────────────────────────────────────────────────
@@ -156,7 +248,7 @@ router.get('/export', auth, async (req, res) => {
     rows.forEach(r => {
       sheet.addRow({
         ...r,
-        cpf:       cpfUtil.mask(cpfUtil.decrypt(r.cpf_enc, r.cpf_iv, r.cpf_tag)),
+        cpf:        cpfUtil.mask(cpfUtil.decrypt(r.cpf_enc, r.cpf_iv, r.cpf_tag)),
         data_cupom: new Date(r.data_cupom).toLocaleDateString('pt-BR'),
         criado_em:  new Date(r.criado_em).toLocaleString('pt-BR'),
       });
