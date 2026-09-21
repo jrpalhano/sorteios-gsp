@@ -14,7 +14,8 @@ router.get('/:slug', async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT id, slug, titulo, selo_url, imagem_produtos_url,
-              vigencia_inicio, vigencia_fim, ativo
+              vigencia_inicio, vigencia_fim, ativo,
+              tipo_fundo, cor_fundo_1, cor_fundo_2
        FROM promocoes WHERE slug = $1`,
       [slug]
     );
@@ -68,7 +69,8 @@ router.get('/', auth, async (req, res) => {
 // ── POST admin: criar promoção ────────────────────────────────────────────────
 
 router.post('/', auth, async (req, res) => {
-  const { titulo, slug, vigencia_inicio, vigencia_fim, produtos = [], regras = [] } = req.body;
+  const { titulo, slug, vigencia_inicio, vigencia_fim, produtos = [], regras = [],
+          tipo_fundo = 'gradiente', cor_fundo_1 = '#000D26', cor_fundo_2 = '#003D90' } = req.body;
 
   if (!titulo || !slug || !vigencia_inicio || !vigencia_fim) {
     return res.status(400).json({ erro: 'Título, slug e vigência são obrigatórios' });
@@ -76,9 +78,10 @@ router.post('/', auth, async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      `INSERT INTO promocoes (titulo, slug, vigencia_inicio, vigencia_fim)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
-      [titulo.trim(), slug.trim().toLowerCase(), vigencia_inicio, vigencia_fim]
+      `INSERT INTO promocoes (titulo, slug, vigencia_inicio, vigencia_fim, tipo_fundo, cor_fundo_1, cor_fundo_2)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [titulo.trim(), slug.trim().toLowerCase(), vigencia_inicio, vigencia_fim,
+       tipo_fundo, cor_fundo_1, cor_fundo_2]
     );
 
     const id = rows[0].id;
@@ -112,7 +115,8 @@ router.post('/', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   const { id } = req.params;
-  const { titulo, slug, vigencia_inicio, vigencia_fim, ativo, produtos = [], regras = [] } = req.body;
+  const { titulo, slug, vigencia_inicio, vigencia_fim, ativo, produtos = [], regras = [],
+          tipo_fundo = 'gradiente', cor_fundo_1 = '#000D26', cor_fundo_2 = '#003D90' } = req.body;
 
   if (!titulo || !slug || !vigencia_inicio || !vigencia_fim) {
     return res.status(400).json({ erro: 'Título, slug e vigência são obrigatórios' });
@@ -120,9 +124,11 @@ router.put('/:id', auth, async (req, res) => {
 
   try {
     const { rowCount } = await db.query(
-      `UPDATE promocoes SET titulo=$1, slug=$2, vigencia_inicio=$3, vigencia_fim=$4, ativo=$5
-       WHERE id=$6`,
-      [titulo.trim(), slug.trim().toLowerCase(), vigencia_inicio, vigencia_fim, ativo ?? true, id]
+      `UPDATE promocoes SET titulo=$1, slug=$2, vigencia_inicio=$3, vigencia_fim=$4, ativo=$5,
+              tipo_fundo=$6, cor_fundo_1=$7, cor_fundo_2=$8
+       WHERE id=$9`,
+      [titulo.trim(), slug.trim().toLowerCase(), vigencia_inicio, vigencia_fim, ativo ?? true,
+       tipo_fundo, cor_fundo_1, cor_fundo_2, id]
     );
 
     if (!rowCount) return res.status(404).json({ erro: 'Promoção não encontrada' });

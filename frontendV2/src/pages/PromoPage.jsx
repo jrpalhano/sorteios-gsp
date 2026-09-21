@@ -61,15 +61,30 @@ function PromoNaoEncontrada() {
   )
 }
 
+// ── Gera o estilo de fundo a partir dos dados da promoção ─────────────────────
+
+function fundoStyle(promo) {
+  if (!promo) return {}
+  if (promo.tipo_fundo === 'solido') {
+    return { background: promo.cor_fundo_1 || '#000D26' }
+  }
+  return {
+    background: `linear-gradient(180deg, ${promo.cor_fundo_1 || '#000D26'} 0%, ${promo.cor_fundo_2 || '#003D90'} 100%)`,
+    backgroundAttachment: 'fixed',
+  }
+}
+
 // ── Landing page da promoção ──────────────────────────────────────────────────
 
 function LandingPage({ promo, lojaSlug }) {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [inscrito, setInscrito]       = useState(false)
 
+  const bg = fundoStyle(promo)
+
   if (inscrito) {
     return (
-      <div className="page">
+      <div className="page" style={bg}>
         <div className="logo-area">
           <img src={promo.selo_url ? `${API_URL}${promo.selo_url}` : '/LOGO POPULAR - COM SOMBRA (3).png'} alt="Promoção" />
         </div>
@@ -84,11 +99,11 @@ function LandingPage({ promo, lojaSlug }) {
   }
 
   if (mostrarForm) {
-    return <PromoForm promo={promo} lojaSlug={lojaSlug} onVoltar={() => setMostrarForm(false)} onSucesso={() => setInscrito(true)} />
+    return <PromoForm promo={promo} lojaSlug={lojaSlug} onVoltar={() => setMostrarForm(false)} onSucesso={() => setInscrito(true)} fundo={bg} />
   }
 
   return (
-    <div className="page">
+    <div className="page" style={bg}>
       {/* Selo */}
       {promo.selo_url && (
         <div className="logo-area">

@@ -26,6 +26,9 @@ const promocaoSchema = yup.object({
   slug:            yup.string().matches(/^[a-z0-9-]+$/, 'Apenas letras minúsculas, números e hífens').required('Informe o slug'),
   vigencia_inicio: yup.string().required('Informe o início da vigência'),
   vigencia_fim:    yup.string().required('Informe o fim da vigência'),
+  tipo_fundo:      yup.string().oneOf(['solido', 'gradiente']).default('gradiente'),
+  cor_fundo_1:     yup.string().default('#000D26'),
+  cor_fundo_2:     yup.string().default('#003D90'),
 })
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -411,7 +414,15 @@ function SecaoPromocoes() {
 
   function abrirEditar(promo) {
     setEditando(promo)
-    reset({ titulo: promo.titulo, slug: promo.slug, vigencia_inicio: promo.vigencia_inicio?.split('T')[0] ?? promo.vigencia_inicio, vigencia_fim: promo.vigencia_fim?.split('T')[0] ?? promo.vigencia_fim })
+    reset({
+      titulo:          promo.titulo,
+      slug:            promo.slug,
+      vigencia_inicio: promo.vigencia_inicio?.split('T')[0] ?? promo.vigencia_inicio,
+      vigencia_fim:    promo.vigencia_fim?.split('T')[0] ?? promo.vigencia_fim,
+      tipo_fundo:      promo.tipo_fundo  ?? 'gradiente',
+      cor_fundo_1:     promo.cor_fundo_1 ?? '#000D26',
+      cor_fundo_2:     promo.cor_fundo_2 ?? '#003D90',
+    })
     setErroGeral(''); setSucesso(''); setVista('form')
     // Carrega produtos e regras
     fetch(`${API_URL}/api/v2/promocoes/${promo.slug}`)
@@ -424,7 +435,16 @@ function SecaoPromocoes() {
 
   async function onSalvar(values) {
     setErroGeral(''); setSalvando(true)
-    const body = { titulo: values.titulo, slug: values.slug, vigencia_inicio: values.vigencia_inicio, vigencia_fim: values.vigencia_fim, ativo: true, produtos: produtos.filter(p => p.trim()), regras: regras.filter(r => r.trim()) }
+    const body = {
+      titulo: values.titulo, slug: values.slug,
+      vigencia_inicio: values.vigencia_inicio, vigencia_fim: values.vigencia_fim,
+      ativo: true,
+      tipo_fundo:  values.tipo_fundo  || 'gradiente',
+      cor_fundo_1: values.cor_fundo_1 || '#000D26',
+      cor_fundo_2: values.cor_fundo_2 || '#003D90',
+      produtos: produtos.filter(p => p.trim()),
+      regras:   regras.filter(r => r.trim()),
+    }
     try {
       const url    = editando ? `${API_URL}/api/v2/promocoes/${editando.id}` : `${API_URL}/api/v2/promocoes`
       const method = editando ? 'PUT' : 'POST'
@@ -548,6 +568,51 @@ function SecaoPromocoes() {
               <label style={labelFiltroStyle}>Imagem dos produtos</label>
               <input type="file" accept="image/*" onChange={e => setUploadImgProd(e.target.files[0])} style={{ ...inputFiltroStyle, padding: '8px 12px', cursor: 'pointer' }} />
               {editando?.imagem_produtos_url && !uploadImgProd && <img src={`${API_URL}${editando.imagem_produtos_url}`} alt="Produtos atual" style={{ marginTop: 8, height: 60, borderRadius: 6, objectFit: 'contain' }} />}
+            </div>
+          </div>
+        </div>
+
+        {/* Fundo */}
+        <div style={{ ...tabelaBoxStyle, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#FAC21E', marginBottom: 14, letterSpacing: '0.5px' }}>FUNDO DA PÁGINA</p>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+            <div>
+              <label style={labelFiltroStyle}>Tipo</label>
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                {[{ val: 'gradiente', label: 'Degradê' }, { val: 'solido', label: 'Cor sólida' }].map(op => (
+                  <label key={op.val} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.75)', cursor: 'pointer' }}>
+                    <input type="radio" value={op.val} {...register('tipo_fundo')} style={{ accentColor: '#FAC21E' }} />
+                    {op.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={labelFiltroStyle}>{watch('tipo_fundo') === 'solido' ? 'Cor' : 'Cor inicial'}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <input type="color" {...register('cor_fundo_1')} style={{ width: 40, height: 36, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, cursor: 'pointer', background: 'none', padding: 2 }} />
+                <input type="text" {...register('cor_fundo_1')} style={{ ...inputFiltroStyle, width: 100 }} placeholder="#000D26" maxLength={7} />
+              </div>
+            </div>
+            {watch('tipo_fundo') !== 'solido' && (
+              <div>
+                <label style={labelFiltroStyle}>Cor final</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <input type="color" {...register('cor_fundo_2')} style={{ width: 40, height: 36, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, cursor: 'pointer', background: 'none', padding: 2 }} />
+                  <input type="text" {...register('cor_fundo_2')} style={{ ...inputFiltroStyle, width: 100 }} placeholder="#003D90" maxLength={7} />
+                </div>
+              </div>
+            )}
+            {/* Preview do fundo */}
+            <div>
+              <label style={labelFiltroStyle}>Preview</label>
+              <div style={{
+                marginTop: 4, width: 80, height: 36, borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: watch('tipo_fundo') === 'solido'
+                  ? (watch('cor_fundo_1') || '#000D26')
+                  : `linear-gradient(135deg, ${watch('cor_fundo_1') || '#000D26'}, ${watch('cor_fundo_2') || '#003D90'})`,
+              }} />
             </div>
           </div>
         </div>

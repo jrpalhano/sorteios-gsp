@@ -58,7 +58,7 @@ function applyMaskCpf(value) {
   return v
 }
 
-export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso }) {
+export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso, fundo = {} }) {
   const [erroGeral, setErroGeral]   = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -100,7 +100,7 @@ export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso }) {
   }
 
   return (
-    <div className="page">
+    <div className="page" style={fundo}>
       <div className="logo-area">
         <img src={promo.selo_url ? `${API_URL}${promo.selo_url}` : '/LOGO POPULAR - COM SOMBRA (3).png'} alt="Promoção" />
       </div>
