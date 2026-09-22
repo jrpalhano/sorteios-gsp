@@ -389,6 +389,15 @@ function SecaoPromocoes() {
   const [uploadSelo, setUploadSelo]         = useState(null)
   const [uploadImgProd, setUploadImgProd]   = useState(null)
   const [salvando, setSalvando]             = useState(false)
+  const [linksAbertos, setLinksAbertos]     = useState(null) // id da promo com links expandidos
+  const [copiado, setCopiado]               = useState(null) // slug da loja copiada
+
+  function copiarLink(url, lojaSlug) {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiado(lojaSlug)
+      setTimeout(() => setCopiado(null), 2000)
+    })
+  }
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({ resolver: yupResolver(promocaoSchema) })
   const tituloWatch = watch('titulo', '')
@@ -511,23 +520,65 @@ function SecaoPromocoes() {
               </tr></thead>
               <tbody>
                 {promocoes.map((p, i) => {
-                  const hoje     = new Date().toISOString().split('T')[0]
-                  const ativa    = p.ativo && p.vigencia_fim >= hoje
+                  const hoje   = new Date().toISOString().split('T')[0]
+                  const ativa  = p.ativo && p.vigencia_fim >= hoje
+                  const lojas  = Array.isArray(p.lojas) ? p.lojas : []
+                  const aberto = linksAbertos === p.id
                   return (
-                    <tr key={p.id} style={trStyle(i)}>
-                      <td style={{ ...tdStyle, fontWeight: 600, color: '#fff' }}>{p.titulo}</td>
-                      <td style={{ ...tdStyle, color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{p.slug}</td>
-                      <td style={{ ...tdStyle, whiteSpace: 'nowrap', fontSize: 12 }}>{formatarData(p.vigencia_inicio)} → {formatarData(p.vigencia_fim)}</td>
-                      <td style={tdStyle}>
-                        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: ativa ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: ativa ? '#4ade80' : '#f87171' }}>
-                          {ativa ? 'Ativa' : 'Inativa'}
-                        </span>
-                      </td>
-                      <td style={{ ...tdStyle, display: 'flex', gap: 8 }}>
-                        <button onClick={() => abrirEditar(p)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px' }}>Editar</button>
-                        <button onClick={() => { setPromoSelecionada(p); setVista('inscricoes') }} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px', background: 'rgba(250,194,30,0.08)', border: '1px solid rgba(250,194,30,0.2)', color: '#FAC21E' }}>Inscrições</button>
-                      </td>
-                    </tr>
+                    <>
+                      <tr key={p.id} style={trStyle(i)}>
+                        <td style={{ ...tdStyle, fontWeight: 600, color: '#fff' }}>{p.titulo}</td>
+                        <td style={{ ...tdStyle, color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{p.slug}</td>
+                        <td style={{ ...tdStyle, whiteSpace: 'nowrap', fontSize: 12 }}>{formatarData(p.vigencia_inicio)} → {formatarData(p.vigencia_fim)}</td>
+                        <td style={tdStyle}>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: ativa ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: ativa ? '#4ade80' : '#f87171' }}>
+                            {ativa ? 'Ativa' : 'Inativa'}
+                          </span>
+                        </td>
+                        <td style={{ ...tdStyle, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button onClick={() => abrirEditar(p)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px' }}>Editar</button>
+                          <button onClick={() => { setPromoSelecionada(p); setVista('inscricoes') }} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px', background: 'rgba(250,194,30,0.08)', border: '1px solid rgba(250,194,30,0.2)', color: '#FAC21E' }}>Inscrições</button>
+                          <button onClick={() => setLinksAbertos(aberto ? null : p.id)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px', background: aberto ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)', color: '#a5b4fc' }}>
+                            {aberto ? 'Fechar' : '🔗 Links'}
+                          </button>
+                        </td>
+                      </tr>
+                      {aberto && (
+                        <tr key={`${p.id}-links`} style={{ background: 'rgba(99,102,241,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <td colSpan={5} style={{ padding: '12px 16px' }}>
+                            <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10 }}>Links para compartilhar</p>
+                            {lojas.length === 0 ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <code style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.05)', padding: '5px 10px', borderRadius: 6, flex: 1 }}>
+                                  {window.location.origin}/promo/{p.slug}
+                                </code>
+                                <button onClick={() => copiarLink(`${window.location.origin}/promo/${p.slug}`, p.slug)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 14px', background: copiado === p.slug ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.07)', color: copiado === p.slug ? '#4ade80' : '#fff', border: copiado === p.slug ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.15)', minWidth: 90 }}>
+                                  {copiado === p.slug ? '✓ Copiado' : 'Copiar'}
+                                </button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {lojas.map(l => {
+                                  const url = `${window.location.origin}/promo/${p.slug}/loja/${l.slug}`
+                                  const key = `${p.id}-${l.slug}`
+                                  return (
+                                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                      <span style={{ fontSize: 11, fontWeight: 700, color: '#FAC21E', minWidth: 90 }}>{l.nome}</span>
+                                      <code style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.05)', padding: '5px 10px', borderRadius: 6, flex: 1 }}>
+                                        {url}
+                                      </code>
+                                      <button onClick={() => copiarLink(url, key)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 14px', background: copiado === key ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.07)', color: copiado === key ? '#4ade80' : '#fff', border: copiado === key ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.15)', minWidth: 90 }}>
+                                        {copiado === key ? '✓ Copiado' : 'Copiar'}
+                                      </button>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   )
                 })}
               </tbody>

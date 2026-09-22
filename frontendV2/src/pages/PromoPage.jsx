@@ -99,7 +99,7 @@ function LandingPage({ promo, lojaSlug }) {
   }
 
   if (mostrarForm) {
-    return <PromoForm promo={promo} onVoltar={() => setMostrarForm(false)} onSucesso={() => setInscrito(true)} fundo={bg} />
+    return <PromoForm promo={promo} lojaSlug={lojaSlug} onVoltar={() => setMostrarForm(false)} onSucesso={() => setInscrito(true)} fundo={bg} />
   }
 
   return (
