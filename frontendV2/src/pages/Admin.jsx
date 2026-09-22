@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import FormField from '../components/FormField'
+import QrCodeModal from '../components/QrCodeModal'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -391,6 +392,7 @@ function SecaoPromocoes() {
   const [salvando, setSalvando]             = useState(false)
   const [linksAbertos, setLinksAbertos]     = useState(null) // id da promo com links expandidos
   const [copiado, setCopiado]               = useState(null) // slug da loja copiada
+  const [qrAberto, setQrAberto]             = useState(null) // { url, nomeLoja, slugPromo, slugLoja }
 
   function copiarLink(url, lojaSlug) {
     navigator.clipboard.writeText(url).then(() => {
@@ -565,6 +567,9 @@ function SecaoPromocoes() {
                                 <code style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.05)', padding: '5px 10px', borderRadius: 6, flex: 1 }}>
                                   {window.location.origin}/promo/{p.slug}
                                 </code>
+                                <button onClick={() => setQrAberto({ url: `${window.location.origin}/promo/${p.slug}`, nomeLoja: p.titulo, slugPromo: p.slug, slugLoja: '' })} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px', background: 'rgba(0,61,144,0.2)', border: '1px solid rgba(0,61,144,0.45)', color: '#60a5fa' }}>
+                                  QR
+                                </button>
                                 <button onClick={() => copiarLink(`${window.location.origin}/promo/${p.slug}`, p.slug)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 14px', background: copiado === p.slug ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.07)', color: copiado === p.slug ? '#4ade80' : '#fff', border: copiado === p.slug ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.15)', minWidth: 90 }}>
                                   {copiado === p.slug ? '✓ Copiado' : 'Copiar'}
                                 </button>
@@ -580,6 +585,9 @@ function SecaoPromocoes() {
                                       <code style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.05)', padding: '5px 10px', borderRadius: 6, flex: 1 }}>
                                         {url}
                                       </code>
+                                      <button onClick={() => setQrAberto({ url, nomeLoja: l.nome, slugPromo: p.slug, slugLoja: l.slug })} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px', background: 'rgba(0,61,144,0.2)', border: '1px solid rgba(0,61,144,0.45)', color: '#60a5fa' }}>
+                                        QR
+                                      </button>
                                       <button onClick={() => copiarLink(url, key)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 14px', background: copiado === key ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.07)', color: copiado === key ? '#4ade80' : '#fff', border: copiado === key ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.15)', minWidth: 90 }}>
                                         {copiado === key ? '✓ Copiado' : 'Copiar'}
                                       </button>
@@ -598,6 +606,15 @@ function SecaoPromocoes() {
             </table>
           )}
         </div>
+      )}
+      {qrAberto && (
+        <QrCodeModal
+          url={qrAberto.url}
+          nomeLoja={qrAberto.nomeLoja}
+          slugPromo={qrAberto.slugPromo}
+          slugLoja={qrAberto.slugLoja}
+          onFechar={() => setQrAberto(null)}
+        />
       )}
     </div>
   )
