@@ -207,6 +207,25 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
+// ── PATCH admin: ativar / inativar promoção ───────────────────────────────────
+
+router.patch('/:id/ativo', auth, async (req, res) => {
+  const { ativo } = req.body;
+  if (typeof ativo !== 'boolean') {
+    return res.status(400).json({ erro: 'Campo ativo deve ser true ou false' });
+  }
+  try {
+    const { rowCount } = await db.query(
+      'UPDATE promocoes SET ativo = $1 WHERE id = $2',
+      [ativo, req.params.id]
+    );
+    if (!rowCount) return res.status(404).json({ erro: 'Promoção não encontrada' });
+    res.json({ mensagem: `Promoção ${ativo ? 'ativada' : 'inativada'} com sucesso` });
+  } catch {
+    res.status(500).json({ erro: 'Erro interno' });
+  }
+});
+
 // ── POST admin: upload do selo ────────────────────────────────────────────────
 
 router.post('/:id/selo', auth, uploadMiddleware, async (req, res) => {
