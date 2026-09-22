@@ -63,7 +63,12 @@ app.use(cookieParser());
 
 // ── Arquivos estáticos (HTML, imagens, uploads) ───────────────────────────────
 app.use(express.static(path.join(__dirname, '../../frontend')));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Imagens de upload: permite carregamento cross-origin (frontend em domínio diferente)
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, '../uploads')));
 
 // ── Config pública (chaves seguras para o frontend) ───────────────────────────
 app.get('/api/config', (req, res) => {
