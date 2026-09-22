@@ -23,17 +23,18 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc:  ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
       frameSrc:   ["'self'", 'https://www.google.com'],
-      imgSrc:     ["'self'", 'data:'],
+      imgSrc:     ["'self'", 'data:', 'https://www.gstatic.com'],
       styleSrc:   ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'"],
     },
   },
   hsts: {
-    maxAge:            60 * 60 * 24 * 365, // 1 ano
+    maxAge:            60 * 60 * 24 * 365,
     includeSubDomains: true,
     preload:           true,
   },
-  referrerPolicy: { policy: 'no-referrer' },
-  crossOriginResourcePolicy: { policy: 'same-origin' },
+  referrerPolicy:            { policy: 'no-referrer' },
+  crossOriginResourcePolicy: { policy: 'same-origin' }, // /uploads sobrescreve para cross-origin
 }));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
