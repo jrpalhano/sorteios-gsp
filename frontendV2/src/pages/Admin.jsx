@@ -469,11 +469,21 @@ function SecaoPromocoes() {
       // Upload imagens se selecionadas
       if (uploadSelo) {
         const fd = new FormData(); fd.append('imagem', uploadSelo)
-        await fetch(`${API_URL}/api/v2/promocoes/${promoId}/selo`, { method: 'POST', credentials: 'include', body: fd })
+        const r = await fetch(`${API_URL}/api/v2/promocoes/${promoId}/selo`, { method: 'POST', credentials: 'include', body: fd })
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}))
+          setErroGeral(d.erro || 'Erro ao enviar o selo. Verifique o formato do arquivo.')
+          setSalvando(false); return
+        }
       }
       if (uploadImgProd) {
         const fd = new FormData(); fd.append('imagem', uploadImgProd)
-        await fetch(`${API_URL}/api/v2/promocoes/${promoId}/imagem-produtos`, { method: 'POST', credentials: 'include', body: fd })
+        const r = await fetch(`${API_URL}/api/v2/promocoes/${promoId}/imagem-produtos`, { method: 'POST', credentials: 'include', body: fd })
+        if (!r.ok) {
+          const d = await r.json().catch(() => ({}))
+          setErroGeral(d.erro || 'Erro ao enviar a imagem de produtos. Verifique o formato do arquivo.')
+          setSalvando(false); return
+        }
       }
 
       setSucesso(editando ? 'Promoção atualizada.' : 'Promoção criada com sucesso.')

@@ -14,6 +14,13 @@ function deletarArquivoAntigo(urlRelativa) {
   fs.unlink(arquivo, () => {});
 }
 
+function uploadMiddleware(req, res, next) {
+  upload.single('imagem')(req, res, (err) => {
+    if (err) return res.status(400).json({ erro: err.message || 'Erro no upload' });
+    next();
+  });
+}
+
 // ── GET público: dados completos de uma promoção pelo slug ────────────────────
 
 router.get('/:slug', async (req, res) => {
@@ -202,7 +209,7 @@ router.put('/:id', auth, async (req, res) => {
 
 // ── POST admin: upload do selo ────────────────────────────────────────────────
 
-router.post('/:id/selo', auth, upload.single('imagem'), async (req, res) => {
+router.post('/:id/selo', auth, uploadMiddleware, async (req, res) => {
   if (!req.file) return res.status(400).json({ erro: 'Nenhuma imagem enviada' });
 
   const url = `/uploads/promocoes/${req.file.filename}`;
@@ -226,7 +233,7 @@ router.post('/:id/selo', auth, upload.single('imagem'), async (req, res) => {
 
 // ── POST admin: upload da imagem de produtos ──────────────────────────────────
 
-router.post('/:id/imagem-produtos', auth, upload.single('imagem'), async (req, res) => {
+router.post('/:id/imagem-produtos', auth, uploadMiddleware, async (req, res) => {
   if (!req.file) return res.status(400).json({ erro: 'Nenhuma imagem enviada' });
 
   const url = `/uploads/promocoes/${req.file.filename}`;
