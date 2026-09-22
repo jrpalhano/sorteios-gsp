@@ -23,17 +23,18 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc:  ["'self'", 'https://www.google.com', 'https://www.gstatic.com'],
       frameSrc:   ["'self'", 'https://www.google.com'],
-      imgSrc:     ["'self'", 'data:'],
+      imgSrc:     ["'self'", 'data:', 'https://www.gstatic.com'],
       styleSrc:   ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'"],
     },
   },
   hsts: {
-    maxAge:            60 * 60 * 24 * 365, // 1 ano
+    maxAge:            60 * 60 * 24 * 365,
     includeSubDomains: true,
     preload:           true,
   },
-  referrerPolicy: { policy: 'no-referrer' },
-  crossOriginResourcePolicy: { policy: 'same-origin' },
+  referrerPolicy:            { policy: 'no-referrer' },
+  crossOriginResourcePolicy: { policy: 'same-origin' }, // /uploads sobrescreve para cross-origin
 }));
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
@@ -63,7 +64,16 @@ app.use(cookieParser());
 
 // ── Arquivos estáticos (HTML, imagens, uploads) ───────────────────────────────
 app.use(express.static(path.join(__dirname, '../../frontend')));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Imagens de upload: permite carregamento cross-origin (frontend em domínio diferente)
+const UPLOADS_STATIC = process.env.NODE_ENV === 'production'
+  ? '/arquivos/uploads'
+  : path.join(__dirname, '../uploads');
+
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(UPLOADS_STATIC));
 
 // ── Config pública (chaves seguras para o frontend) ───────────────────────────
 app.get('/api/config', (req, res) => {

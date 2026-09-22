@@ -16,7 +16,6 @@ const validacoes = [
   body('influencer_nome')
     .if(body('comprou_influencer').equals('true'))
     .trim().escape().isLength({ min: 2 }).withMessage('Informe o nome da influenciadora'),
-  body('loja_slug').notEmpty().withMessage('Loja inválida'),
   body('promocao_id').isInt({ min: 1 }).withMessage('Promoção inválida'),
   body('lgpd_aceite').equals('true').withMessage('É necessário aceitar os termos da LGPD'),
 ];
@@ -39,13 +38,6 @@ router.post('/', inscricaoLimiter, validacoes, async (req, res) => {
   }
 
   try {
-    // Valida loja
-    const { rows: lojas } = await db.query(
-      'SELECT id FROM lojas WHERE slug = $1 AND ativo = true',
-      [loja_slug]
-    );
-    if (!lojas.length) return res.status(400).json({ erro: 'Loja inválida' });
-
     // Valida promoção (ativa e dentro da vigência)
     const hoje = new Date().toISOString().split('T')[0];
     const { rows: promos } = await db.query(
@@ -55,6 +47,28 @@ router.post('/', inscricaoLimiter, validacoes, async (req, res) => {
       [promocao_id, hoje]
     );
     if (!promos.length) return res.status(400).json({ erro: 'Promoção inválida ou encerrada' });
+
+    // Resolve loja: busca lojas associadas à promoção
+    const { rows: lojasPromo } = await db.query(
+      `SELECT l.id, l.slug FROM lojas l
+       JOIN promocao_lojas pl ON pl.loja_id = l.id
+       WHERE pl.promocao_id = $1 AND l.ativo = true`,
+      [promocao_id]
+    );
+
+    let loja_id = null;
+
+    if (lojasPromo.length > 0) {
+      // Promoção tem lojas: loja_slug é obrigatório e deve ser uma das lojas da promoção
+      if (!loja_slug) {
+        return res.status(400).json({ erro: 'Selecione a loja onde realizou a compra' });
+      }
+      const lojaEncontrada = lojasPromo.find(l => l.slug === loja_slug);
+      if (!lojaEncontrada) {
+        return res.status(400).json({ erro: 'Loja inválida para esta promoção' });
+      }
+      loja_id = lojaEncontrada.id;
+    }
 
     // Cupom único por promoção
     const { rows: existente } = await db.query(
@@ -74,7 +88,7 @@ router.post('/', inscricaoLimiter, validacoes, async (req, res) => {
           lgpd_aceite, lgpd_aceite_em, recaptcha_score, ip_origem)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true,NOW(),$12,$13)`,
       [
-        promocao_id, lojas[0].id, nome, telefone,
+        promocao_id, loja_id, nome, telefone,
         cpf_enc, cpf_iv, cpf_tag,
         numero_cupom, data_cupom,
         comprou_influencer === 'true',
