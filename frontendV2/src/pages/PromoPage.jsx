@@ -25,11 +25,10 @@ function PromoEncerrada() {
       </div>
       <div className="card" style={{ maxWidth: 420, textAlign: 'center' }}>
         <h1 className="card-title">Promoção encerrada</h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, margin: '16px 0 28px' }}>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, margin: '16px 0' }}>
           Esta promoção não está mais vigente.<br />
           Fique de olho nas nossas próximas promoções!
         </p>
-        <Link to="/" className="btn-primary">Ir para a página inicial</Link>
       </div>
       <footer className="footer">
         <span>© Supermercados Popular {new Date().getFullYear()}</span>
@@ -48,11 +47,10 @@ function PromoNaoEncontrada() {
       </div>
       <div className="card" style={{ maxWidth: 420, textAlign: 'center' }}>
         <h1 className="card-title">Ops!</h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, margin: '16px 0 28px' }}>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', lineHeight: 1.7, margin: '16px 0' }}>
           Esta promoção não foi encontrada.<br />
           Verifique o link e tente novamente.
         </p>
-        <Link to="/" className="btn-primary">Ir para a página inicial</Link>
       </div>
       <footer className="footer">
         <span>© Supermercados Popular {new Date().getFullYear()}</span>
