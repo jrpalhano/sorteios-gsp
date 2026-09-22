@@ -66,10 +66,14 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../../frontend')));
 
 // Imagens de upload: permite carregamento cross-origin (frontend em domínio diferente)
+const UPLOADS_STATIC = process.env.NODE_ENV === 'production'
+  ? '/arquivos/uploads'
+  : path.join(__dirname, '../uploads');
+
 app.use('/uploads', (req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
-}, express.static(path.join(__dirname, '../uploads')));
+}, express.static(UPLOADS_STATIC));
 
 // ── Config pública (chaves seguras para o frontend) ───────────────────────────
 app.get('/api/config', (req, res) => {
