@@ -109,12 +109,6 @@ export default function PromoForm({ promo, onVoltar, onSucesso, fundo = {} }) {
       </div>
 
       <div className="card">
-        {lojaSlug && (
-          <div className="badge-wrap">
-            <span className="loja-badge">{lojaSlug.toUpperCase()}</span>
-          </div>
-        )}
-
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <FormField label="Nome completo" required error={errors.nome?.message}>
             <input type="text" placeholder="Seu nome completo" autoComplete="name" className={errors.nome ? 'invalido' : ''} {...register('nome')} />
