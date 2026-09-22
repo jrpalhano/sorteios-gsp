@@ -42,6 +42,10 @@ router.get('/:slug', async (req, res) => {
     const promo = rows[0];
     const hoje  = new Date().toISOString().split('T')[0];
 
+    if (!promo.ativo) {
+      return res.status(410).json({ erro: 'Promoção inativa', codigo: 'ENCERRADA' });
+    }
+
     if (promo.vigencia_fim < hoje) {
       return res.status(410).json({ erro: 'Promoção encerrada', codigo: 'ENCERRADA' });
     }
