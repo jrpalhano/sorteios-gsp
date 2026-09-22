@@ -55,7 +55,7 @@ export default function QrCodeModal({ url, nomeLoja, slugPromo, slugLoja, onFech
             fgColor="#003D90"
             bgColor="#ffffff"
             imageSettings={{
-              src: '/u redondinho.svg',
+              src: '/Group 249.png',
               height: 64,
               width: 64,
               excavate: true,
