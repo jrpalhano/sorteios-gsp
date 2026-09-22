@@ -399,6 +399,16 @@ function SecaoPromocoes() {
     })
   }
 
+  async function toggleAtivo(promo) {
+    try {
+      await fetch(`${API_URL}/api/v2/promocoes/${promo.id}/ativo`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', body: JSON.stringify({ ativo: !promo.ativo }),
+      })
+      carregarPromocoes()
+    } catch {}
+  }
+
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({ resolver: yupResolver(promocaoSchema) })
   const tituloWatch = watch('titulo', '')
 
@@ -537,6 +547,9 @@ function SecaoPromocoes() {
                         </td>
                         <td style={{ ...tdStyle, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <button onClick={() => abrirEditar(p)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px' }}>Editar</button>
+                          <button onClick={() => toggleAtivo(p)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px', background: p.ativo ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)', border: `1px solid ${p.ativo ? 'rgba(239,68,68,0.25)' : 'rgba(34,197,94,0.25)'}`, color: p.ativo ? '#f87171' : '#4ade80' }}>
+                            {p.ativo ? 'Inativar' : 'Ativar'}
+                          </button>
                           <button onClick={() => { setPromoSelecionada(p); setVista('inscricoes') }} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px', background: 'rgba(250,194,30,0.08)', border: '1px solid rgba(250,194,30,0.2)', color: '#FAC21E' }}>Inscrições</button>
                           <button onClick={() => setLinksAbertos(aberto ? null : p.id)} style={{ ...btnAcaoStyle, fontSize: 11, padding: '5px 12px', background: aberto ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)', color: '#a5b4fc' }}>
                             {aberto ? 'Fechar' : '🔗 Links'}
