@@ -51,13 +51,14 @@ export default function QrCodeModal({ url, nomeLoja, slugPromo, slugLoja, onFech
           <QRCodeCanvas
             ref={canvasRef}
             value={url}
-            size={200}
+            size={220}
+            level="H"
             fgColor="#003D90"
             bgColor="#ffffff"
             imageSettings={{
               src: '/Group 249.png',
-              height: 64,
-              width: 64,
+              height: 30,
+              width: 30,
               excavate: true,
             }}
           />
