@@ -375,18 +375,20 @@ function SecaoAdmins({ adminAtual }) {
 // ── Seção: Promoções ──────────────────────────────────────────────────────────
 
 function SecaoPromocoes() {
-  const [promocoes, setPromocoes]       = useState([])
-  const [carregando, setCarregando]     = useState(true)
-  const [vista, setVista]               = useState('lista') // lista | form | inscricoes
-  const [editando, setEditando]         = useState(null)
+  const [promocoes, setPromocoes]           = useState([])
+  const [carregando, setCarregando]         = useState(true)
+  const [vista, setVista]                   = useState('lista') // lista | form | inscricoes
+  const [editando, setEditando]             = useState(null)
   const [promoSelecionada, setPromoSelecionada] = useState(null)
-  const [erroGeral, setErroGeral]       = useState('')
-  const [sucesso, setSucesso]           = useState('')
-  const [produtos, setProdutos]         = useState([''])
-  const [regras, setRegras]             = useState([''])
-  const [uploadSelo, setUploadSelo]     = useState(null)
-  const [uploadImgProd, setUploadImgProd] = useState(null)
-  const [salvando, setSalvando]         = useState(false)
+  const [erroGeral, setErroGeral]           = useState('')
+  const [sucesso, setSucesso]               = useState('')
+  const [produtos, setProdutos]             = useState([''])
+  const [regras, setRegras]                 = useState([''])
+  const [lojasDisponiveis, setLojasDisponiveis] = useState([])
+  const [lojasPromo, setLojasPromo]         = useState([]) // IDs selecionados
+  const [uploadSelo, setUploadSelo]         = useState(null)
+  const [uploadImgProd, setUploadImgProd]   = useState(null)
+  const [salvando, setSalvando]             = useState(false)
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({ resolver: yupResolver(promocaoSchema) })
   const tituloWatch = watch('titulo', '')
@@ -404,13 +406,21 @@ function SecaoPromocoes() {
   useEffect(() => { carregarPromocoes() }, [carregarPromocoes])
 
   useEffect(() => {
+    fetch(`${API_URL}/api/lojas`, { credentials: 'include' }).then(r => r.json()).then(setLojasDisponiveis).catch(() => {})
+  }, [])
+
+  useEffect(() => {
     if (vista === 'form' && !editando) {
       setValue('slug', slugify(tituloWatch))
     }
   }, [tituloWatch, vista, editando, setValue])
 
+  function toggleLoja(id) {
+    setLojasPromo(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
   function abrirNovaPromocao() {
-    setEditando(null); reset(); setProdutos(['']); setRegras(['']); setUploadSelo(null); setUploadImgProd(null); setErroGeral(''); setSucesso(''); setVista('form')
+    setEditando(null); reset(); setProdutos(['']); setRegras(['']); setLojasPromo([]); setUploadSelo(null); setUploadImgProd(null); setErroGeral(''); setSucesso(''); setVista('form')
   }
 
   function abrirEditar(promo) {
@@ -425,13 +435,13 @@ function SecaoPromocoes() {
       cor_fundo_2:     promo.cor_fundo_2 ?? '#003D90',
     })
     setErroGeral(''); setSucesso(''); setVista('form')
-    // Carrega produtos e regras
     fetch(`${API_URL}/api/v2/promocoes/${promo.slug}`)
       .then(r => r.json())
       .then(data => {
         setProdutos(data.produtos?.length ? data.produtos : [''])
         setRegras(data.regras?.length ? data.regras : [''])
-      }).catch(() => { setProdutos(['']); setRegras(['']) })
+        setLojasPromo(Array.isArray(data.lojas) ? data.lojas.map(l => l.id) : [])
+      }).catch(() => { setProdutos(['']); setRegras(['']); setLojasPromo([]) })
   }
 
   async function onSalvar(values) {
@@ -445,6 +455,7 @@ function SecaoPromocoes() {
       cor_fundo_2: values.cor_fundo_2 || '#003D90',
       produtos: produtos.filter(p => p.trim()),
       regras:   regras.filter(r => r.trim()),
+      lojas:    lojasPromo,
     }
     try {
       const url    = editando ? `${API_URL}/api/v2/promocoes/${editando.id}` : `${API_URL}/api/v2/promocoes`
@@ -618,6 +629,20 @@ function SecaoPromocoes() {
           </div>
         </div>
 
+        {/* Lojas */}
+        <div style={{ ...tabelaBoxStyle, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#FAC21E', marginBottom: 6, letterSpacing: '0.5px' }}>LOJAS PARTICIPANTES</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 14 }}>Sem seleção = promoção sem vínculo de loja (campo não aparece no formulário)</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {lojasDisponiveis.map(l => (
+              <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: lojasPromo.includes(l.id) ? '#FAC21E' : 'rgba(255,255,255,0.6)', cursor: 'pointer', background: lojasPromo.includes(l.id) ? 'rgba(250,194,30,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${lojasPromo.includes(l.id) ? 'rgba(250,194,30,0.35)' : 'rgba(255,255,255,0.1)'}`, borderRadius: 8, padding: '8px 14px', transition: 'all 0.15s' }}>
+                <input type="checkbox" checked={lojasPromo.includes(l.id)} onChange={() => toggleLoja(l.id)} style={{ accentColor: '#FAC21E' }} />
+                {l.nome}
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Produtos */}
         <div style={{ ...tabelaBoxStyle, padding: 20, marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -658,7 +683,7 @@ function SecaoPromocoes() {
 // ── Inscrições de uma promoção específica (v2) ────────────────────────────────
 
 function SecaoInscricoesPromo({ promo, onVoltar }) {
-  const [lojas, setLojas]           = useState([])
+  const lojas = Array.isArray(promo.lojas) ? promo.lojas : []
   const [inscricoes, setInscricoes] = useState([])
   const [total, setTotal]           = useState(0)
   const [page, setPage]             = useState(1)
@@ -669,10 +694,6 @@ function SecaoInscricoesPromo({ promo, onVoltar }) {
   const [dataFim, setDataFim]       = useState('')
   const [carregando, setCarregando] = useState(false)
   const LIMIT = 50
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/lojas`, { credentials: 'include' }).then(r => r.json()).then(setLojas).catch(() => {})
-  }, [])
 
   const carregar = useCallback(async () => {
     setCarregando(true)

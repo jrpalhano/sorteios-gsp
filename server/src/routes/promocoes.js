@@ -1,7 +1,5 @@
 const express  = require('express');
 const router   = express.Router();
-const path     = require('path');
-const fs       = require('fs');
 const db       = require('../db/connection');
 const auth     = require('../middleware/auth');
 const upload   = require('../middleware/upload');
@@ -31,20 +29,22 @@ router.get('/:slug', async (req, res) => {
       return res.status(410).json({ erro: 'Promoção encerrada', codigo: 'ENCERRADA' });
     }
 
-    const { rows: produtos } = await db.query(
-      'SELECT nome FROM promocao_produtos WHERE promocao_id = $1 ORDER BY ordem ASC',
-      [promo.id]
-    );
-
-    const { rows: regras } = await db.query(
-      'SELECT texto FROM promocao_regras WHERE promocao_id = $1 ORDER BY ordem ASC',
-      [promo.id]
-    );
+    const [{ rows: produtos }, { rows: regras }, { rows: lojas }] = await Promise.all([
+      db.query('SELECT nome FROM promocao_produtos WHERE promocao_id = $1 ORDER BY ordem ASC', [promo.id]),
+      db.query('SELECT texto FROM promocao_regras WHERE promocao_id = $1 ORDER BY ordem ASC', [promo.id]),
+      db.query(
+        `SELECT l.id, l.slug, l.nome FROM lojas l
+         JOIN promocao_lojas pl ON pl.loja_id = l.id
+         WHERE pl.promocao_id = $1 AND l.ativo = true ORDER BY l.nome`,
+        [promo.id]
+      ),
+    ]);
 
     res.json({
       ...promo,
       produtos: produtos.map(p => p.nome),
       regras:   regras.map(r => r.texto),
+      lojas,
     });
   } catch (err) {
     console.error(err);
@@ -57,11 +57,21 @@ router.get('/:slug', async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const { rows } = await db.query(
-      `SELECT id, slug, titulo, vigencia_inicio, vigencia_fim, ativo, criado_em
-       FROM promocoes ORDER BY criado_em DESC`
+      `SELECT p.id, p.slug, p.titulo, p.vigencia_inicio, p.vigencia_fim, p.ativo, p.criado_em,
+              COALESCE(
+                json_agg(json_build_object('id', l.id, 'slug', l.slug, 'nome', l.nome))
+                  FILTER (WHERE l.id IS NOT NULL),
+                '[]'
+              ) AS lojas
+       FROM promocoes p
+       LEFT JOIN promocao_lojas pl ON pl.promocao_id = p.id
+       LEFT JOIN lojas l ON l.id = pl.loja_id
+       GROUP BY p.id
+       ORDER BY p.criado_em DESC`
     );
     res.json(rows);
-  } catch {
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ erro: 'Erro interno' });
   }
 });
@@ -69,7 +79,7 @@ router.get('/', auth, async (req, res) => {
 // ── POST admin: criar promoção ────────────────────────────────────────────────
 
 router.post('/', auth, async (req, res) => {
-  const { titulo, slug, vigencia_inicio, vigencia_fim, produtos = [], regras = [],
+  const { titulo, slug, vigencia_inicio, vigencia_fim, produtos = [], regras = [], lojas = [],
           tipo_fundo = 'gradiente', cor_fundo_1 = '#000D26', cor_fundo_2 = '#003D90' } = req.body;
 
   if (!titulo || !slug || !vigencia_inicio || !vigencia_fim) {
@@ -87,7 +97,6 @@ router.post('/', auth, async (req, res) => {
     const id = rows[0].id;
 
     if (produtos.length) {
-      const prodValues = produtos.map((nome, i) => `($1, $${i + 2}, ${i})`).join(', ');
       await db.query(
         `INSERT INTO promocao_produtos (promocao_id, nome, ordem) VALUES ${produtos.map((_, i) => `($1, $${i + 2}, ${i})`).join(', ')}`,
         [id, ...produtos]
@@ -98,6 +107,13 @@ router.post('/', auth, async (req, res) => {
       await db.query(
         `INSERT INTO promocao_regras (promocao_id, texto, ordem) VALUES ${regras.map((_, i) => `($1, $${i + 2}, ${i})`).join(', ')}`,
         [id, ...regras]
+      );
+    }
+
+    if (lojas.length) {
+      await db.query(
+        `INSERT INTO promocao_lojas (promocao_id, loja_id) VALUES ${lojas.map((_, i) => `($1, $${i + 2})`).join(', ')}`,
+        [id, ...lojas]
       );
     }
 
@@ -115,7 +131,7 @@ router.post('/', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   const { id } = req.params;
-  const { titulo, slug, vigencia_inicio, vigencia_fim, ativo, produtos = [], regras = [],
+  const { titulo, slug, vigencia_inicio, vigencia_fim, ativo, produtos = [], regras = [], lojas = [],
           tipo_fundo = 'gradiente', cor_fundo_1 = '#000D26', cor_fundo_2 = '#003D90' } = req.body;
 
   if (!titulo || !slug || !vigencia_inicio || !vigencia_fim) {
@@ -133,23 +149,36 @@ router.put('/:id', auth, async (req, res) => {
 
     if (!rowCount) return res.status(404).json({ erro: 'Promoção não encontrada' });
 
-    // Substitui produtos e regras (DELETE + INSERT — seguro pois são dados da promoção)
-    await db.query('DELETE FROM promocao_produtos WHERE promocao_id = $1', [id]);
-    await db.query('DELETE FROM promocao_regras   WHERE promocao_id = $1', [id]);
+    await Promise.all([
+      db.query('DELETE FROM promocao_produtos WHERE promocao_id = $1', [id]),
+      db.query('DELETE FROM promocao_regras   WHERE promocao_id = $1', [id]),
+      db.query('DELETE FROM promocao_lojas    WHERE promocao_id = $1', [id]),
+    ]);
+
+    const inserts = [];
 
     if (produtos.length) {
-      await db.query(
+      inserts.push(db.query(
         `INSERT INTO promocao_produtos (promocao_id, nome, ordem) VALUES ${produtos.map((_, i) => `($1, $${i + 2}, ${i})`).join(', ')}`,
         [id, ...produtos]
-      );
+      ));
     }
 
     if (regras.length) {
-      await db.query(
+      inserts.push(db.query(
         `INSERT INTO promocao_regras (promocao_id, texto, ordem) VALUES ${regras.map((_, i) => `($1, $${i + 2}, ${i})`).join(', ')}`,
         [id, ...regras]
-      );
+      ));
     }
+
+    if (lojas.length) {
+      inserts.push(db.query(
+        `INSERT INTO promocao_lojas (promocao_id, loja_id) VALUES ${lojas.map((_, i) => `($1, $${i + 2})`).join(', ')}`,
+        [id, ...lojas]
+      ));
+    }
+
+    await Promise.all(inserts);
 
     res.json({ mensagem: 'Promoção atualizada com sucesso' });
   } catch (err) {
@@ -217,10 +246,11 @@ router.get('/:id/inscricoes', auth, async (req, res) => {
 
   try {
     const { rows } = await db.query(`
-      SELECT i.id, l.nome AS loja, i.nome, i.telefone,
+      SELECT i.id, COALESCE(l.nome, '—') AS loja, i.nome, i.telefone,
              i.numero_cupom, i.data_cupom,
              i.comprou_influencer, i.influencer_nome, i.criado_em
-      FROM inscricoes_v2 i JOIN lojas l ON l.id = i.loja_id
+      FROM inscricoes_v2 i
+      LEFT JOIN lojas l ON l.id = i.loja_id
       ${clausula}
       ORDER BY i.criado_em DESC
       LIMIT $${params.length - 1} OFFSET $${params.length}

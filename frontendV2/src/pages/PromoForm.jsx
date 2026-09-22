@@ -14,6 +14,7 @@ const schema = yup.object({
   cpf:      yup.string().matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido — use 000.000.000-00').required('CPF é obrigatório'),
   numero_cupom: yup.string().matches(/^\d+$/, 'O cupom deve conter apenas números').required('Informe o número do cupom'),
   data_cupom:   yup.string().required('Informe a data do cupom'),
+  loja_slug: yup.string().optional(),
   comprou_influencer: yup.string().oneOf(['sim', 'nao'], 'Selecione uma opção').required('Selecione uma opção'),
   influencer_nome: yup.string().when('comprou_influencer', {
     is: 'sim',
@@ -58,9 +59,11 @@ function applyMaskCpf(value) {
   return v
 }
 
-export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso, fundo = {} }) {
+export default function PromoForm({ promo, onVoltar, onSucesso, fundo = {} }) {
   const [erroGeral, setErroGeral]   = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const temLojas = Array.isArray(promo.lojas) && promo.lojas.length > 0
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm({ resolver: yupResolver(schema), mode: 'onBlur' })
   const comprouInfluencer = watch('comprou_influencer')
@@ -79,7 +82,7 @@ export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso, fundo 
         data_cupom:         values.data_cupom,
         comprou_influencer: values.comprou_influencer === 'sim' ? 'true' : 'false',
         influencer_nome:    values.influencer_nome?.trim() || '',
-        loja_slug:          lojaSlug || '',
+        loja_slug:          values.loja_slug || '',
         promocao_id:        promo.id,
         lgpd_aceite:        'true',
         recaptcha_token,
@@ -132,6 +135,17 @@ export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso, fundo 
           <FormField label="Data do cupom" required error={errors.data_cupom?.message}>
             <input type="date" className={errors.data_cupom ? 'invalido' : ''} {...register('data_cupom')} />
           </FormField>
+
+          {temLojas && (
+            <FormField label="Em qual loja você comprou?" required error={errors.loja_slug?.message}>
+              <select className={errors.loja_slug ? 'invalido' : ''} {...register('loja_slug', { validate: v => (v && v !== '') || 'Selecione a loja' })}>
+                <option value="">Selecione a loja...</option>
+                {promo.lojas.map(l => (
+                  <option key={l.id} value={l.slug}>{l.nome}</option>
+                ))}
+              </select>
+            </FormField>
+          )}
 
           <hr className="divisor" />
 
