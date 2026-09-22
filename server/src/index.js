@@ -16,6 +16,9 @@ const inscricoesV2Router = require('./routes/inscricoesV2');
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
+// Railway (e qualquer proxy reverso) injeta X-Forwarded-For — necessário para rate limiter
+app.set('trust proxy', 1);
+
 // ── Segurança: headers HTTP ───────────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: {

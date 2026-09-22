@@ -1,8 +1,25 @@
 const express  = require('express');
 const router   = express.Router();
+const path     = require('path');
+const fs       = require('fs');
 const db       = require('../db/connection');
 const auth     = require('../middleware/auth');
 const upload   = require('../middleware/upload');
+
+const UPLOADS_BASE = process.env.NODE_ENV === 'production' ? '/arquivos/uploads' : path.join(__dirname, '../../uploads');
+
+function deletarArquivoAntigo(urlRelativa) {
+  if (!urlRelativa) return;
+  const arquivo = path.join(UPLOADS_BASE, urlRelativa.replace('/uploads/', ''));
+  fs.unlink(arquivo, () => {});
+}
+
+function uploadMiddleware(req, res, next) {
+  upload.single('imagem')(req, res, (err) => {
+    if (err) return res.status(400).json({ erro: err.message || 'Erro no upload' });
+    next();
+  });
+}
 
 // ── GET público: dados completos de uma promoção pelo slug ────────────────────
 
@@ -192,17 +209,22 @@ router.put('/:id', auth, async (req, res) => {
 
 // ── POST admin: upload do selo ────────────────────────────────────────────────
 
-router.post('/:id/selo', auth, upload.single('imagem'), async (req, res) => {
+router.post('/:id/selo', auth, uploadMiddleware, async (req, res) => {
   if (!req.file) return res.status(400).json({ erro: 'Nenhuma imagem enviada' });
 
   const url = `/uploads/promocoes/${req.file.filename}`;
 
   try {
+    const { rows: antes } = await db.query(
+      'SELECT selo_url FROM promocoes WHERE id = $1',
+      [req.params.id]
+    );
     const { rows } = await db.query(
       'UPDATE promocoes SET selo_url = $1 WHERE id = $2 RETURNING selo_url',
       [url, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ erro: 'Promoção não encontrada' });
+    deletarArquivoAntigo(antes[0]?.selo_url);
     res.json({ url });
   } catch {
     res.status(500).json({ erro: 'Erro interno' });
@@ -211,17 +233,22 @@ router.post('/:id/selo', auth, upload.single('imagem'), async (req, res) => {
 
 // ── POST admin: upload da imagem de produtos ──────────────────────────────────
 
-router.post('/:id/imagem-produtos', auth, upload.single('imagem'), async (req, res) => {
+router.post('/:id/imagem-produtos', auth, uploadMiddleware, async (req, res) => {
   if (!req.file) return res.status(400).json({ erro: 'Nenhuma imagem enviada' });
 
   const url = `/uploads/promocoes/${req.file.filename}`;
 
   try {
+    const { rows: antes } = await db.query(
+      'SELECT imagem_produtos_url FROM promocoes WHERE id = $1',
+      [req.params.id]
+    );
     const { rows } = await db.query(
       'UPDATE promocoes SET imagem_produtos_url = $1 WHERE id = $2 RETURNING imagem_produtos_url',
       [url, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ erro: 'Promoção não encontrada' });
+    deletarArquivoAntigo(antes[0]?.imagem_produtos_url);
     res.json({ url });
   } catch {
     res.status(500).json({ erro: 'Erro interno' });
