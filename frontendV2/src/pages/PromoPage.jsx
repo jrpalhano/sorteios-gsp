@@ -112,6 +112,16 @@ function LandingPage({ promo, lojaSlug }) {
       )}
 
       <div className="card">
+        {/* Título e loja */}
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#FAC21E', textAlign: 'center', marginBottom: lojaSlug ? 4 : 16, letterSpacing: '0.3px' }}>
+          {promo.titulo}
+        </h1>
+        {lojaSlug && (
+          <p style={{ fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginBottom: 16 }}>
+            {promo.lojas?.find(l => l.slug === lojaSlug)?.nome ?? lojaSlug.toUpperCase()}
+          </p>
+        )}
+
         {/* Imagem dos produtos */}
         {promo.imagem_produtos_url && (
           <img

@@ -602,7 +602,7 @@ function SecaoPromocoes() {
             <div>
               <label style={labelFiltroStyle}>{watch('tipo_fundo') === 'solido' ? 'Cor' : 'Cor inicial'}</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                <input type="color" {...register('cor_fundo_1')} style={{ width: 40, height: 36, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, cursor: 'pointer', background: 'none', padding: 2 }} />
+                <input type="color" value={watch('cor_fundo_1') || '#000D26'} onChange={e => setValue('cor_fundo_1', e.target.value)} style={{ width: 40, height: 36, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, cursor: 'pointer', background: 'none', padding: 2 }} />
                 <input type="text" {...register('cor_fundo_1')} style={{ ...inputFiltroStyle, width: 100 }} placeholder="#000D26" maxLength={7} />
               </div>
             </div>
@@ -610,7 +610,7 @@ function SecaoPromocoes() {
               <div>
                 <label style={labelFiltroStyle}>Cor final</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                  <input type="color" {...register('cor_fundo_2')} style={{ width: 40, height: 36, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, cursor: 'pointer', background: 'none', padding: 2 }} />
+                  <input type="color" value={watch('cor_fundo_2') || '#003D90'} onChange={e => setValue('cor_fundo_2', e.target.value)} style={{ width: 40, height: 36, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, cursor: 'pointer', background: 'none', padding: 2 }} />
                   <input type="text" {...register('cor_fundo_2')} style={{ ...inputFiltroStyle, width: 100 }} placeholder="#003D90" maxLength={7} />
                 </div>
               </div>
