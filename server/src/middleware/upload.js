@@ -17,10 +17,10 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (_req, file, cb) => {
-  const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+  const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.svg'];
   const ext     = path.extname(file.originalname).toLowerCase();
   if (allowed.includes(ext)) return cb(null, true);
-  cb(new Error('Formato inválido. Use JPG, PNG ou WebP.'));
+  cb(new Error('Formato inválido. Use JPG, PNG, WebP ou SVG.'));
 };
 
 const upload = multer({
