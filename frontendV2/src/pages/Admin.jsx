@@ -395,7 +395,8 @@ function SecaoPromocoes() {
     setCarregando(true)
     try {
       const r = await fetch(`${API_URL}/api/v2/promocoes`, { credentials: 'include' })
-      setPromocoes(await r.json())
+      const data = await r.json()
+      setPromocoes(Array.isArray(data) ? data : [])
     } catch {}
     setCarregando(false)
   }, [])

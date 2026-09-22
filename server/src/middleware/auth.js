@@ -11,7 +11,7 @@ module.exports = async function auth(req, res, next) {
   try {
     payload = jwt.verify(token, process.env.JWT_SECRET);
   } catch {
-    res.clearCookie('admin_token', { path: '/api/admin' });
+    res.clearCookie('admin_token', { path: '/' });
     return res.status(401).json({ erro: 'Sessão expirada. Faça login novamente.' });
   }
 
@@ -23,12 +23,12 @@ module.exports = async function auth(req, res, next) {
     );
 
     if (rows.length === 0) {
-      res.clearCookie('admin_token', { path: '/api/admin' });
+      res.clearCookie('admin_token', { path: '/' });
       return res.status(401).json({ erro: 'Conta não encontrada.' });
     }
 
     if (!rows[0].ativo) {
-      res.clearCookie('admin_token', { path: '/api/admin' });
+      res.clearCookie('admin_token', { path: '/' });
       return res.status(403).json({ erro: 'Conta desativada. Entre em contato com o responsável.' });
     }
 

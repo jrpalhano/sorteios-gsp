@@ -44,7 +44,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       secure:   prod,
       sameSite: prod ? 'None' : 'Strict',
       maxAge:   8 * 60 * 60 * 1000,
-      path:     '/api/admin',
+      path:     '/',
     });
 
     res.json({ mensagem: 'Login realizado com sucesso', nome: admin.nome });
@@ -56,7 +56,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 // ── Logout ────────────────────────────────────────────────────────────────────
 
 router.post('/logout', (req, res) => {
-  res.clearCookie('admin_token', { path: '/api/admin' });
+  res.clearCookie('admin_token', { path: '/' });
   res.json({ mensagem: 'Logout realizado' });
 });
 
