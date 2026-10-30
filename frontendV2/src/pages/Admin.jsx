@@ -880,12 +880,172 @@ function SecaoInscricoesPromo({ promo, onVoltar }) {
   )
 }
 
+// ── Seção: Validação de Cupons V1 ─────────────────────────────────────────────
+
+function SecaoValidacao() {
+  const [emAndamento, setEmAndamento]   = useState(false)
+  const [itens, setItens]               = useState([])
+  const [progresso, setProgresso]       = useState({ atual: 0, total: 0 })
+  const [resumo, setResumo]             = useState(null)
+  const [erro, setErro]                 = useState('')
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/admin/inscricoes/validar/status`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setEmAndamento(d.em_andamento))
+      .catch(() => {})
+  }, [])
+
+  function iniciarValidacao() {
+    setItens([])
+    setResumo(null)
+    setErro('')
+    setEmAndamento(true)
+    setProgresso({ atual: 0, total: 0 })
+
+    const es = new EventSource(`${API_URL}/api/admin/inscricoes/validar/stream`, { withCredentials: true })
+
+    es.onmessage = (e) => {
+      const ev = JSON.parse(e.data)
+
+      if (ev.tipo === 'inicio') {
+        setProgresso({ atual: 0, total: ev.total })
+      } else if (ev.tipo === 'item') {
+        setItens(prev => [ev, ...prev])
+        setProgresso(prev => ({ ...prev, atual: prev.atual + 1 }))
+      } else if (ev.tipo === 'fim') {
+        setResumo(ev)
+        setEmAndamento(false)
+        es.close()
+      } else if (ev.tipo === 'erro') {
+        setErro(ev.mensagem)
+        setEmAndamento(false)
+        es.close()
+      }
+    }
+
+    es.onerror = () => {
+      setErro('Conexão interrompida com o servidor.')
+      setEmAndamento(false)
+      es.close()
+    }
+  }
+
+  const pct = progresso.total > 0 ? Math.round((progresso.atual / progresso.total) * 100) : 0
+
+  return (
+    <div>
+      {/* Cabeçalho */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <span style={tabelaTituloStyle}>VALIDAÇÃO DE CUPONS — FESTIVAL DE PRÊMIOS</span>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>
+            Verifica inscrições (id ≥ 54) cruzando com o ERP · loja 1 · mínimo R$49,00
+          </p>
+        </div>
+        <a
+          href={`${API_URL}/api/admin/export-aprovados`}
+          target="_blank"
+          rel="noreferrer"
+          style={{ ...btnAcaoStyle, textDecoration: 'none', background: 'rgba(250,194,30,0.12)', border: '1px solid rgba(250,194,30,0.3)', color: '#FAC21E' }}
+        >
+          Exportar Aprovados
+        </a>
+        <button
+          onClick={iniciarValidacao}
+          disabled={emAndamento}
+          style={{ ...btnAcaoStyle, background: emAndamento ? 'rgba(255,255,255,0.04)' : 'rgba(250,194,30,0.12)', border: `1px solid ${emAndamento ? 'rgba(255,255,255,0.1)' : 'rgba(250,194,30,0.35)'}`, color: emAndamento ? 'rgba(255,255,255,0.25)' : '#FAC21E', fontWeight: 700, padding: '10px 20px', cursor: emAndamento ? 'not-allowed' : 'pointer' }}
+        >
+          {emAndamento ? `Validando… ${progresso.atual}/${progresso.total}` : '▶ Iniciar Validação'}
+        </button>
+      </div>
+
+      {/* Barra de progresso */}
+      {(emAndamento || progresso.atual > 0) && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+            <span>{progresso.atual} de {progresso.total} processados</span>
+            <span>{pct}%</span>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 99, height: 6, overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 99, background: 'linear-gradient(90deg, #FAC21E, #f97316)', width: `${pct}%`, transition: 'width 0.2s ease' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Resumo final */}
+      {resumo && (
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          {[
+            { label: 'Total', val: resumo.total,          cor: 'rgba(255,255,255,0.7)' },
+            { label: 'Aprovados', val: resumo.aprovados,  cor: '#4ade80' },
+            { label: 'Rejeitados', val: resumo.rejeitados + resumo.nao_encontrados, cor: '#f87171' },
+          ].map(c => (
+            <div key={c.label} style={{ ...tabelaBoxStyle, padding: '14px 20px', flex: '1 1 120px', textAlign: 'center' }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: c.cor }}>{c.val}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{c.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {erro && <div className="msg-erro" style={{ marginBottom: 16 }}>{erro}</div>}
+
+      {/* Tabela de resultados */}
+      {itens.length > 0 && (
+        <div style={tabelaBoxStyle}>
+          <div style={tabelaHeaderStyle}>
+            <span style={tabelaTituloStyle}>RESULTADO DA VALIDAÇÃO</span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{itens.length} processado{itens.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div style={{ overflowX: 'auto', maxHeight: 520, overflowY: 'auto' }}>
+            <table style={tableStyle}>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+                <tr style={{ background: '#0d1e35' }}>
+                  {['#', 'Nome', 'Cupom', 'Valor ERP', 'Status', 'Motivo'].map(h => (
+                    <th key={h} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {itens.map((r, i) => (
+                  <tr key={r.id} style={{ ...trStyle(i), borderLeft: `3px solid ${r.status === 'aprovado' ? 'rgba(74,222,128,0.5)' : 'rgba(248,113,113,0.5)'}` }}>
+                    <td style={tdStyle}>{r.id}</td>
+                    <td style={{ ...tdStyle, fontWeight: 600, color: '#fff' }}>{r.nome}</td>
+                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: 12 }}>{r.cupom}</td>
+                    <td style={{ ...tdStyle, fontWeight: 700, color: r.status === 'aprovado' ? '#4ade80' : 'rgba(255,255,255,0.4)' }}>
+                      {r.valor ? `R$${Number(r.valor).toFixed(2).replace('.', ',')}` : '—'}
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: r.status === 'aprovado' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: r.status === 'aprovado' ? '#4ade80' : '#f87171' }}>
+                        {r.status === 'aprovado' ? '✓ Aprovado' : '✗ Rejeitado'}
+                      </span>
+                    </td>
+                    <td style={{ ...tdStyle, fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{r.motivo || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {!emAndamento && itens.length === 0 && !resumo && (
+        <div style={{ ...tabelaBoxStyle, ...loadingStyle, borderStyle: 'dashed', color: 'rgba(255,255,255,0.2)' }}>
+          Clique em "Iniciar Validação" para começar. Os resultados aparecerão em tempo real.
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Dashboard com menu lateral ────────────────────────────────────────────────
 
 const MENU = [
-  { id: 'inscricoes', label: 'Inscrições'      },
-  { id: 'admins',     label: 'Administradores' },
-  { id: 'promocoes',  label: 'Promoções'       },
+  { id: 'inscricoes',  label: 'Inscrições'      },
+  { id: 'validacao',   label: 'Validar Cupons'  },
+  { id: 'admins',      label: 'Administradores' },
+  { id: 'promocoes',   label: 'Promoções'       },
 ]
 
 function Dashboard({ adminAtual, onLogout }) {
@@ -958,6 +1118,7 @@ function Dashboard({ adminAtual, onLogout }) {
         {/* Conteúdo */}
         <main style={{ flex: 1, padding: '28px 28px 48px', overflowX: 'hidden' }}>
           {secao === 'inscricoes' && <SecaoInscricoes />}
+          {secao === 'validacao'  && <SecaoValidacao />}
           {secao === 'admins'     && <SecaoAdmins adminAtual={adminAtual} />}
           {secao === 'promocoes'  && <SecaoPromocoes />}
         </main>

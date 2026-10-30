@@ -3,10 +3,18 @@ const router   = express.Router();
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const ExcelJS  = require('exceljs');
+const { Pool } = require('pg');
 const db       = require('../db/connection');
 const auth     = require('../middleware/auth');
 const cpfUtil  = require('../utils/cpf');
 const { loginLimiter } = require('../middleware/rateLimiter');
+
+// Pool de leitura do ERP (somente SELECT)
+const erpPool = new Pool({
+  connectionString: process.env.ERP_DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  max: 3,
+});
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -261,6 +269,154 @@ router.get('/export', auth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: 'Erro ao gerar exportação' });
+  }
+});
+
+// ── Exportação Excel — aprovados V1 ──────────────────────────────────────────
+
+router.get('/export-aprovados', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT i.id, l.nome AS loja, i.nome, i.telefone,
+             i.cpf_enc, i.cpf_iv, i.cpf_tag,
+             i.numero_cupom, i.data_cupom,
+             i.comprou_influencer, i.influencer_nome,
+             i.cupom_valor_erp, i.cupom_verificado_em, i.criado_em
+      FROM inscricoes i JOIN lojas l ON l.id = i.loja_id
+      WHERE i.id >= 54 AND i.cupom_status = 'aprovado'
+      ORDER BY i.id ASC
+    `);
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet    = workbook.addWorksheet('Aprovados');
+
+    sheet.columns = [
+      { header: 'ID',            key: 'id',                 width: 8  },
+      { header: 'Loja',          key: 'loja',               width: 15 },
+      { header: 'Nome',          key: 'nome',               width: 30 },
+      { header: 'Telefone',      key: 'telefone',           width: 18 },
+      { header: 'CPF',           key: 'cpf',                width: 18 },
+      { header: 'Cupom',         key: 'numero_cupom',       width: 15 },
+      { header: 'Data Cupom',    key: 'data_cupom',         width: 14 },
+      { header: 'Valor ERP',     key: 'cupom_valor_erp',    width: 14 },
+      { header: 'Influencer',    key: 'influencer_nome',    width: 25 },
+      { header: 'Verificado em', key: 'cupom_verificado_em', width: 22 },
+      { header: 'Cadastrado',    key: 'criado_em',          width: 22 },
+    ];
+
+    sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF003D90' } };
+
+    rows.forEach(r => {
+      sheet.addRow({
+        ...r,
+        cpf:                 cpfUtil.mask(cpfUtil.decrypt(r.cpf_enc, r.cpf_iv, r.cpf_tag)),
+        data_cupom:          new Date(r.data_cupom).toLocaleDateString('pt-BR'),
+        cupom_valor_erp:     r.cupom_valor_erp ? Number(r.cupom_valor_erp) : '',
+        cupom_verificado_em: r.cupom_verificado_em ? new Date(r.cupom_verificado_em).toLocaleString('pt-BR') : '',
+        criado_em:           new Date(r.criado_em).toLocaleString('pt-BR'),
+      });
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="aprovados.xlsx"');
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro ao gerar exportação' });
+  }
+});
+
+// ── Validação de cupons V1 (inscricoes id >= 54, loja 1 no ERP) ──────────────
+
+// Estado em memória para evitar execuções simultâneas
+let validacaoEmAndamento = false;
+
+router.get('/inscricoes/validar/status', auth, (req, res) => {
+  res.json({ em_andamento: validacaoEmAndamento });
+});
+
+router.get('/inscricoes/validar/stream', auth, async (req, res) => {
+  if (validacaoEmAndamento) {
+    return res.status(409).json({ erro: 'Validação já em andamento' });
+  }
+
+  // Cabeçalhos SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  validacaoEmAndamento = true;
+
+  try {
+    const { rows: inscricoes } = await db.query(
+      `SELECT id, nome, numero_cupom FROM inscricoes WHERE id >= 54 ORDER BY id`
+    );
+
+    send({ tipo: 'inicio', total: inscricoes.length });
+
+    let aprovados = 0, rejeitados = 0, nao_encontrados = 0;
+
+    for (const insc of inscricoes) {
+      const cupom = insc.numero_cupom?.trim().replace(/^0+/, '') || '';
+
+      let status, motivo = null, valor = null;
+
+      try {
+        // Busca no ERP — agrupa por número do cupom na loja 1
+        const { rows } = await erpPool.query(
+          `SELECT SUM(total_sale)::numeric(10,2) AS total
+           FROM sales
+           WHERE LTRIM(coupon_number, '0') = $1
+             AND branch = '1'`,
+          [cupom]
+        );
+
+        const total = rows[0]?.total ? parseFloat(rows[0].total) : null;
+
+        if (total === null) {
+          status = 'rejeitado';
+          motivo = 'cupom não localizado no ERP';
+          nao_encontrados++;
+        } else if (total < 49) {
+          status = 'rejeitado';
+          motivo = `valor R$${total.toFixed(2).replace('.', ',')} abaixo do mínimo de R$49,00`;
+          rejeitados++;
+        } else {
+          status = 'aprovado';
+          valor = total;
+          aprovados++;
+        }
+      } catch {
+        status = 'rejeitado';
+        motivo = 'erro ao consultar ERP';
+        rejeitados++;
+      }
+
+      await db.query(
+        `UPDATE inscricoes SET
+           cupom_status          = $1,
+           cupom_verificado_em   = NOW(),
+           cupom_valor_erp       = $2,
+           cupom_rejeicao_motivo = $3
+         WHERE id = $4`,
+        [status, valor, motivo, insc.id]
+      );
+
+      send({ tipo: 'item', id: insc.id, nome: insc.nome, cupom: insc.numero_cupom, status, valor, motivo });
+    }
+
+    send({ tipo: 'fim', total: inscricoes.length, aprovados, rejeitados, nao_encontrados });
+  } catch (err) {
+    console.error('[validar]', err);
+    send({ tipo: 'erro', mensagem: 'Erro interno durante a validação' });
+  } finally {
+    validacaoEmAndamento = false;
+    res.end();
   }
 });
 
