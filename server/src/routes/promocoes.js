@@ -30,7 +30,8 @@ router.get('/:slug', async (req, res) => {
     const { rows } = await db.query(
       `SELECT id, slug, titulo, selo_url, imagem_produtos_url,
               vigencia_inicio, vigencia_fim, ativo,
-              tipo_fundo, cor_fundo_1, cor_fundo_2
+              tipo_fundo, cor_fundo_1, cor_fundo_2,
+              exige_chave_nf
        FROM promocoes WHERE slug = $1`,
       [slug]
     );
@@ -79,6 +80,7 @@ router.get('/', auth, async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT p.id, p.slug, p.titulo, p.vigencia_inicio, p.vigencia_fim, p.ativo, p.criado_em,
+              p.exige_chave_nf,
               COALESCE(
                 json_agg(json_build_object('id', l.id, 'slug', l.slug, 'nome', l.nome))
                   FILTER (WHERE l.id IS NOT NULL),
@@ -101,7 +103,8 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   const { titulo, slug, vigencia_inicio, vigencia_fim, produtos = [], regras = [], lojas = [],
-          tipo_fundo = 'gradiente', cor_fundo_1 = '#000D26', cor_fundo_2 = '#003D90' } = req.body;
+          tipo_fundo = 'gradiente', cor_fundo_1 = '#000D26', cor_fundo_2 = '#003D90',
+          exige_chave_nf = false } = req.body;
 
   if (!titulo || !slug || !vigencia_inicio || !vigencia_fim) {
     return res.status(400).json({ erro: 'Título, slug e vigência são obrigatórios' });
@@ -109,10 +112,10 @@ router.post('/', auth, async (req, res) => {
 
   try {
     const { rows } = await db.query(
-      `INSERT INTO promocoes (titulo, slug, vigencia_inicio, vigencia_fim, tipo_fundo, cor_fundo_1, cor_fundo_2)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      `INSERT INTO promocoes (titulo, slug, vigencia_inicio, vigencia_fim, tipo_fundo, cor_fundo_1, cor_fundo_2, exige_chave_nf)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
       [titulo.trim(), slug.trim().toLowerCase(), vigencia_inicio, vigencia_fim,
-       tipo_fundo, cor_fundo_1, cor_fundo_2]
+       tipo_fundo, cor_fundo_1, cor_fundo_2, Boolean(exige_chave_nf)]
     );
 
     const id = rows[0].id;
@@ -153,7 +156,8 @@ router.post('/', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   const { id } = req.params;
   const { titulo, slug, vigencia_inicio, vigencia_fim, ativo, produtos = [], regras = [], lojas = [],
-          tipo_fundo = 'gradiente', cor_fundo_1 = '#000D26', cor_fundo_2 = '#003D90' } = req.body;
+          tipo_fundo = 'gradiente', cor_fundo_1 = '#000D26', cor_fundo_2 = '#003D90',
+          exige_chave_nf = false } = req.body;
 
   if (!titulo || !slug || !vigencia_inicio || !vigencia_fim) {
     return res.status(400).json({ erro: 'Título, slug e vigência são obrigatórios' });
@@ -162,10 +166,10 @@ router.put('/:id', auth, async (req, res) => {
   try {
     const { rowCount } = await db.query(
       `UPDATE promocoes SET titulo=$1, slug=$2, vigencia_inicio=$3, vigencia_fim=$4, ativo=$5,
-              tipo_fundo=$6, cor_fundo_1=$7, cor_fundo_2=$8
-       WHERE id=$9`,
+              tipo_fundo=$6, cor_fundo_1=$7, cor_fundo_2=$8, exige_chave_nf=$9
+       WHERE id=$10`,
       [titulo.trim(), slug.trim().toLowerCase(), vigencia_inicio, vigencia_fim, ativo ?? true,
-       tipo_fundo, cor_fundo_1, cor_fundo_2, id]
+       tipo_fundo, cor_fundo_1, cor_fundo_2, Boolean(exige_chave_nf), id]
     );
 
     if (!rowCount) return res.status(404).json({ erro: 'Promoção não encontrada' });
@@ -297,7 +301,7 @@ router.get('/:id/inscricoes', auth, async (req, res) => {
   try {
     const { rows } = await db.query(`
       SELECT i.id, COALESCE(l.nome, '—') AS loja, i.nome, i.telefone,
-             i.numero_cupom, i.data_cupom,
+             i.numero_cupom, i.data_cupom, i.chave_nf,
              i.comprou_influencer, i.influencer_nome, i.criado_em
       FROM inscricoes_v2 i
       LEFT JOIN lojas l ON l.id = i.loja_id
