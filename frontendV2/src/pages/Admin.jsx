@@ -389,6 +389,7 @@ function SecaoPromocoes() {
   const [lojasPromo, setLojasPromo]         = useState([]) // IDs selecionados
   const [uploadSelo, setUploadSelo]         = useState(null)
   const [uploadImgProd, setUploadImgProd]   = useState(null)
+  const [exigeChaveNf, setExigeChaveNf]     = useState(false)
   const [salvando, setSalvando]             = useState(false)
   const [linksAbertos, setLinksAbertos]     = useState(null) // id da promo com links expandidos
   const [copiado, setCopiado]               = useState(null) // slug da loja copiada
@@ -441,7 +442,7 @@ function SecaoPromocoes() {
   }
 
   function abrirNovaPromocao() {
-    setEditando(null); reset(); setProdutos(['']); setRegras(['']); setLojasPromo([]); setUploadSelo(null); setUploadImgProd(null); setErroGeral(''); setSucesso(''); setVista('form')
+    setEditando(null); reset(); setProdutos(['']); setRegras(['']); setLojasPromo([]); setExigeChaveNf(false); setUploadSelo(null); setUploadImgProd(null); setErroGeral(''); setSucesso(''); setVista('form')
   }
 
   function abrirEditar(promo) {
@@ -462,7 +463,8 @@ function SecaoPromocoes() {
         setProdutos(data.produtos?.length ? data.produtos : [''])
         setRegras(data.regras?.length ? data.regras : [''])
         setLojasPromo(Array.isArray(data.lojas) ? data.lojas.map(l => l.id) : [])
-      }).catch(() => { setProdutos(['']); setRegras(['']); setLojasPromo([]) })
+        setExigeChaveNf(Boolean(data.exige_chave_nf))
+      }).catch(() => { setProdutos(['']); setRegras(['']); setLojasPromo([]); setExigeChaveNf(false) })
   }
 
   async function onSalvar(values) {
@@ -474,9 +476,10 @@ function SecaoPromocoes() {
       tipo_fundo:  values.tipo_fundo  || 'gradiente',
       cor_fundo_1: values.cor_fundo_1 || '#000D26',
       cor_fundo_2: values.cor_fundo_2 || '#003D90',
-      produtos: produtos.filter(p => p.trim()),
-      regras:   regras.filter(r => r.trim()),
-      lojas:    lojasPromo,
+      produtos:        produtos.filter(p => p.trim()),
+      regras:          regras.filter(r => r.trim()),
+      lojas:           lojasPromo,
+      exige_chave_nf:  exigeChaveNf,
     }
     try {
       const url    = editando ? `${API_URL}/api/v2/promocoes/${editando.id}` : `${API_URL}/api/v2/promocoes`
@@ -734,6 +737,33 @@ function SecaoPromocoes() {
           </div>
         </div>
 
+        {/* Configurações do formulário público */}
+        <div style={{ ...tabelaBoxStyle, padding: 20, marginBottom: 16 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#FAC21E', marginBottom: 6, letterSpacing: '0.5px' }}>CONFIGURAÇÕES DO FORMULÁRIO</p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 14 }}>Controla quais campos são exibidos e obrigatórios no formulário de inscrição</p>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', padding: '12px 14px', background: exigeChaveNf ? 'rgba(250,194,30,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${exigeChaveNf ? 'rgba(250,194,30,0.3)' : 'rgba(255,255,255,0.08)'}`, borderRadius: 10, transition: 'all 0.15s' }}>
+            <input
+              type="checkbox"
+              checked={exigeChaveNf}
+              onChange={e => setExigeChaveNf(e.target.checked)}
+              style={{ accentColor: '#FAC21E', width: 16, height: 16, cursor: 'pointer' }}
+            />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: exigeChaveNf ? '#FAC21E' : 'rgba(255,255,255,0.75)' }}>
+                Exigir leitura do QR code da nota fiscal
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+                Quando ativo, o campo de chave NF aparece no formulário e é obrigatório. A validade é verificada no servidor.
+              </div>
+            </div>
+            {exigeChaveNf && (
+              <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: '#FAC21E', background: 'rgba(250,194,30,0.12)', border: '1px solid rgba(250,194,30,0.25)', padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                ATIVO
+              </span>
+            )}
+          </label>
+        </div>
+
         {/* Produtos */}
         <div style={{ ...tabelaBoxStyle, padding: 20, marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -849,7 +879,7 @@ function SecaoInscricoesPromo({ promo, onVoltar }) {
           <div style={{ overflowX: 'auto' }}>
             <table style={tableStyle}>
               <thead><tr style={{ background: 'rgba(0,0,0,0.2)' }}>
-                {['#', 'Loja', 'Nome', 'Telefone', 'Cupom', 'Data', 'Influencer', 'Cadastrado em'].map(h => <th key={h} style={thStyle}>{h}</th>)}
+                {['#', 'Loja', 'Nome', 'Telefone', 'Cupom', 'Data', 'Chave NF', 'Influencer', 'Cadastrado em'].map(h => <th key={h} style={thStyle}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {inscricoes.map((r, i) => (
@@ -860,6 +890,11 @@ function SecaoInscricoesPromo({ promo, onVoltar }) {
                     <td style={tdStyle}>{r.telefone}</td>
                     <td style={{ ...tdStyle, fontWeight: 700 }}>{r.numero_cupom}</td>
                     <td style={tdStyle}>{formatarData(r.data_cupom)}</td>
+                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: 11 }}>
+                      {r.chave_nf
+                        ? <span title={r.chave_nf} style={{ color: '#6fcf97' }}>···{r.chave_nf.slice(-6)}</span>
+                        : <span style={{ color: 'rgba(255,255,255,0.2)' }}>—</span>}
+                    </td>
                     <td style={tdStyle}>{r.comprou_influencer ? (r.influencer_nome || 'Sim') : <span style={{ color: 'rgba(255,255,255,0.3)' }}>—</span>}</td>
                     <td style={{ ...tdStyle, color: 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap' }}>{formatarDataHora(r.criado_em)}</td>
                   </tr>
