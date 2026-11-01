@@ -1,28 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { Link } from 'react-router-dom'
 import FormField from '../components/FormField'
+import QrNfScanner from '../components/QrNfScanner'
 
 const API_URL  = import.meta.env.VITE_API_URL
 const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
 
-const schema = yup.object({
-  nome:     yup.string().trim().min(3, 'Nome deve ter ao menos 3 caracteres').required('Nome é obrigatório'),
-  telefone: yup.string().matches(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Informe um telefone válido — ex: (99) 99999-9999').required('Telefone é obrigatório'),
-  cpf:      yup.string().matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido — use 000.000.000-00').required('CPF é obrigatório'),
-  numero_cupom: yup.string().matches(/^\d+$/, 'O cupom deve conter apenas números').required('Informe o número do cupom'),
-  data_cupom:   yup.string().required('Informe a data do cupom'),
-  comprou_influencer: yup.string().oneOf(['sim', 'nao'], 'Selecione uma opção').required('Selecione uma opção'),
-  influencer_nome: yup.string().when('comprou_influencer', {
-    is: 'sim',
-    then: s => s.trim().min(2, 'Informe o nome da influenciadora').required('Informe o nome da influenciadora'),
-    otherwise: s => s.optional(),
-  }),
-  lgpd:        yup.bool().oneOf([true], 'Você precisa aceitar os termos da LGPD').required(),
-  regulamento: yup.bool().oneOf([true], 'Você precisa confirmar que leu o regulamento').required(),
-})
 
 function loadRecaptcha() {
   if (!SITE_KEY || document.querySelector('script[data-recaptcha]')) return
@@ -61,14 +47,48 @@ function applyMaskCpf(value) {
 export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso, fundo = {} }) {
   const [erroGeral, setErroGeral]   = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [chaveNf, setChaveNf]       = useState('')
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({ resolver: yupResolver(schema), mode: 'onBlur' })
+  const schema = useMemo(() => yup.object({
+    nome:     yup.string().trim().min(3, 'Nome deve ter ao menos 3 caracteres').required('Nome é obrigatório'),
+    telefone: yup.string().matches(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Informe um telefone válido — ex: (99) 99999-9999').required('Telefone é obrigatório'),
+    cpf:      yup.string().matches(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido — use 000.000.000-00').required('CPF é obrigatório'),
+    numero_cupom: yup.string().matches(/^\d+$/, 'O cupom deve conter apenas números').required('Informe o número do cupom'),
+    data_cupom:   yup.string().required('Informe a data do cupom'),
+    comprou_influencer: yup.string().oneOf(['sim', 'nao'], 'Selecione uma opção').required('Selecione uma opção'),
+    influencer_nome: yup.string().when('comprou_influencer', {
+      is: 'sim',
+      then: s => s.trim().min(2, 'Informe o nome da influenciadora').required('Informe o nome da influenciadora'),
+      otherwise: s => s.optional(),
+    }),
+    lgpd:        yup.bool().oneOf([true], 'Você precisa aceitar os termos da LGPD').required(),
+    regulamento: yup.bool().oneOf([true], 'Você precisa confirmar que leu o regulamento').required(),
+  }), [])
+
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm({ resolver: yupResolver(schema), mode: 'onBlur' })
   const comprouInfluencer = watch('comprou_influencer')
+
+  function handleScan(chave) {
+    setChaveNf(chave)
+    setErroGeral('')
+  }
+
+  function handleLimparChave() {
+    setChaveNf('')
+  }
 
   useEffect(() => { loadRecaptcha() }, [])
 
   async function onSubmit(values) {
     setErroGeral(''); setSubmitting(true)
+
+    // Validação da chave NF feita aqui pois é gerenciada fora do react-hook-form
+    if (promo.exige_chave_nf && !chaveNf) {
+      setErroGeral('Escaneie o QR code da sua nota fiscal para continuar.')
+      setSubmitting(false)
+      return
+    }
+
     try {
       const recaptcha_token = await getRecaptchaToken()
       const payload = {
@@ -83,6 +103,7 @@ export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso, fundo 
         promocao_id:        promo.id,
         lgpd_aceite:        'true',
         recaptcha_token,
+        ...(chaveNf ? { chave_nf: chaveNf } : {}),
       }
 
       const resp = await fetch(`${API_URL}/api/v2/inscricoes`, {
@@ -126,6 +147,20 @@ export default function PromoForm({ promo, lojaSlug, onVoltar, onSucesso, fundo 
           <FormField label="Data do cupom" required error={errors.data_cupom?.message}>
             <input type="date" className={errors.data_cupom ? 'invalido' : ''} {...register('data_cupom')} />
           </FormField>
+
+          {promo.exige_chave_nf && (
+            <FormField
+              label="Chave da nota fiscal"
+              required
+              hint="Escaneie o QR code impresso no cupom fiscal para capturar a chave automaticamente."
+            >
+              <QrNfScanner
+                chaveAtual={chaveNf}
+                onScan={handleScan}
+                onLimpar={handleLimparChave}
+              />
+            </FormField>
+          )}
 
           <hr className="divisor" />
 
